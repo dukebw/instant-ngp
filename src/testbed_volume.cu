@@ -36,12 +36,23 @@ using namespace tcnn;
 
 NGP_NAMESPACE_BEGIN
 
+Testbed::NetworkDims Testbed::network_dims_volume() const {
+	NetworkDims dims;
+	dims.n_input = 3;
+	dims.n_output = 4;
+	dims.n_pos = 3;
+	return dims;
+}
+
 __device__ Array4f proc_envmap(const Vector3f& dir, const Vector3f& up_dir, const Vector3f& sun_dir, const Array3f& skycol) {
-	float skyam = up_dir.dot(dir)*0.5f+0.5f;
-	float sunam = std::max(0.f,sun_dir.dot(dir));
-	sunam*=sunam;	sunam*=sunam;
-	sunam*=sunam;	sunam*=sunam;
-	sunam*=sunam;	sunam*=sunam;
+	float skyam = up_dir.dot(dir) * 0.5f + 0.5f;
+	float sunam = std::max(0.f, sun_dir.dot(dir));
+	sunam *= sunam;
+	sunam *= sunam;
+	sunam *= sunam;
+	sunam *= sunam;
+	sunam *= sunam;
+	sunam *= sunam;
 
 	Array4f result;
 	result.head<3>() = skycol * skyam + Array3f{255.f/255.0f, 215.f/255.0f, 195.f/255.0f} * (20.f*sunam);
@@ -474,7 +485,7 @@ void Testbed::render_volume(CudaRenderBuffer& render_buffer,
 			uint32_t srcbuf=(iter&1);
 			uint32_t dstbuf=1-srcbuf;
 
-			uint32_t n_elements = next_multiple(n, BATCH_SIZE_MULTIPLE);
+			uint32_t n_elements = next_multiple(n, tcnn::batch_size_granularity);
 			GPUMatrix<float> positions_matrix((float*)m_volume.pos[srcbuf].data(), 3, n_elements);
 			GPUMatrix<float> densities_matrix((float*)m_volume.radiance_and_density.data(), 4, n_elements);
 			m_network->inference(stream, positions_matrix, densities_matrix);

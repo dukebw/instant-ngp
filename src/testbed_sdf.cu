@@ -36,7 +36,14 @@ using namespace tcnn;
 NGP_NAMESPACE_BEGIN
 
 static constexpr uint32_t MARCH_ITER = 10000;
-static constexpr float MIN_DIST = 0.00005f;
+
+Testbed::NetworkDims Testbed::network_dims_sdf() const {
+	NetworkDims dims;
+	dims.n_input = 3;
+	dims.n_output = 1;
+	dims.n_pos = 3;
+	return dims;
+}
 
 __device__ inline float square(float x) { return x * x; }
 __device__ inline float mix(float a, float b, float t) { return a + (b - a) * t; }
@@ -151,6 +158,7 @@ __global__ void advance_pos_kernel_sdf(
 	const TriangleOctreeNode* __restrict__ octree_nodes,
 	int max_depth,
 	float distance_scale,
+	float maximum_distance,
 	float k,
 	float* __restrict__ prev_distances,
 	float* __restrict__ total_distances,
@@ -198,7 +206,7 @@ __global__ void advance_pos_kernel_sdf(
 		total_distances[i] = total_distance + distance;
 	}
 
-	bool stay_alive = distance > MIN_DIST && fabsf(distance / 2) > 3*MIN_DIST;
+	bool stay_alive = distance > maximum_distance && fabsf(distance / 2) > 3*maximum_distance;
 	if (!stay_alive) {
 		payload.alive = false;
 		return;
@@ -649,7 +657,16 @@ uint32_t Testbed::SphereTracer::trace_bvh(TriangleBvh* bvh, const Triangle* tria
 	return n_alive;
 }
 
-uint32_t Testbed::SphereTracer::trace(const distance_fun_t& distance_function, float zero_offset, float distance_scale, const BoundingBox& aabb, const float floor_y, const TriangleOctree* octree, cudaStream_t stream) {
+uint32_t Testbed::SphereTracer::trace(
+	const distance_fun_t& distance_function,
+	float zero_offset,
+	float distance_scale,
+	float maximum_distance,
+	const BoundingBox& aabb,
+	const float floor_y,
+	const TriangleOctree* octree,
+	cudaStream_t stream
+) {
 	if (m_n_rays_initialized == 0) {
 		return 0;
 	}
@@ -716,6 +733,7 @@ uint32_t Testbed::SphereTracer::trace(const distance_fun_t& distance_function, f
 				octree ? octree->nodes_gpu() : nullptr,
 				octree ? octree->depth() : 0,
 				distance_scale,
+				maximum_distance,
 				m_shadow_sharpness,
 				m_trace_shadow_rays ? rays_current.prev_distance.data() : nullptr,
 				m_trace_shadow_rays ? rays_current.total_distance.data() : nullptr,
@@ -733,7 +751,7 @@ uint32_t Testbed::SphereTracer::trace(const distance_fun_t& distance_function, f
 }
 
 void Testbed::SphereTracer::enlarge(size_t n_elements) {
-	n_elements = next_multiple(n_elements, size_t(BATCH_SIZE_MULTIPLE)); // network inference rounds n_elements up to 256, and uses these arrays, so we must do so also.
+	n_elements = next_multiple(n_elements, size_t(tcnn::batch_size_granularity));
 	m_rays[0].enlarge(n_elements);
 	m_rays[1].enlarge(n_elements);
 	m_rays_hit.enlarge(n_elements);
@@ -828,7 +846,16 @@ void Testbed::render_sdf(
 		if (gt_raytrace) {
 			return tracer.trace_bvh(m_sdf.triangle_bvh.get(), m_sdf.triangles_gpu.data(), stream);
 		} else {
-			return tracer.trace(distance_function, m_sdf.zero_offset, m_sdf.distance_scale, sdf_bounding_box, get_floor_y(), octree_ptr, stream);
+			return tracer.trace(
+				distance_function,
+				m_sdf.zero_offset,
+				m_sdf.distance_scale,
+				m_sdf.maximum_distance,
+				sdf_bounding_box,
+				get_floor_y(),
+				octree_ptr,
+				stream
+			);
 		}
 	};
 
@@ -846,7 +873,7 @@ void Testbed::render_sdf(
 			extract_dimension_pos_neg_kernel<float><<<n_blocks_linear(n_hit*3), n_threads_linear, 0, stream>>>(n_hit*3, 0, 1, 3, rays_hit.distance.data(), CM, (float*)rays_hit.normal.data());
 		} else {
 			// Store colors in the normal buffer
-			uint32_t n_elements = next_multiple(n_hit, BATCH_SIZE_MULTIPLE);
+			uint32_t n_elements = next_multiple(n_hit, tcnn::batch_size_granularity);
 
 			GPUMatrix<float> positions_matrix((float*)rays_hit.pos.data(), 3, n_elements);
 			GPUMatrix<float> colors_matrix((float*)rays_hit.normal.data(), 3, n_elements);
@@ -900,7 +927,7 @@ void Testbed::render_sdf(
 		}
 	} else if (render_mode == ERenderMode::EncodingVis && m_render_mode != ERenderMode::Slice) {
 		// HACK: Store colors temporarily in the normal buffer
-		uint32_t n_elements = next_multiple(n_hit, BATCH_SIZE_MULTIPLE);
+		uint32_t n_elements = next_multiple(n_hit, tcnn::batch_size_granularity);
 
 		GPUMatrix<float> positions_matrix((float*)rays_hit.pos.data(), 3, n_elements);
 		GPUMatrix<float> colors_matrix((float*)rays_hit.normal.data(), 3, n_elements);
