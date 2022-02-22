@@ -37,6 +37,6 @@ otherwise I got an error about `GLIB_CXX_3.4.29` not found.
   https://github.com/NVlabs/instant-ngp/issues/119#issuecomment-1034701258
 
 - I had to install colmap from source to use ingp's colmap2nerf.py.
-  The most tricky part of that was that I had to comment out lines 79-80 in
+  The trickiest part of that was that I had to comment out lines 79-80 in
   `/usr/include/c++/11/type_traits`.
   See: https://github.com/colmap/colmap/issues/1418
