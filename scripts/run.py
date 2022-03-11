@@ -14,9 +14,6 @@ import commentjson as json
 
 import numpy as np
 
-import sys
-import time
-
 from common import *
 from scenes import (
     scenes_nerf,
