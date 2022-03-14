@@ -9,10 +9,11 @@ import os
 from pathlib import Path
 
 import click
-import common
 import numpy as np
+from scipy.spatial.transform import Rotation, Slerp
 
 # TODO(brendan): pyngp depends on common being imported first to set up PATH
+import common
 import pyngp as ngp
 from common import ROOT_DIR, write_image
 from tqdm import tqdm
@@ -140,6 +141,7 @@ def mesh(
             previous_training_step = testbed.training_step
 
     if mesh_output_path is not None:
+        os.makedirs(os.path.dirname(mesh_output_path), exist_ok=True)
         testbed.compute_and_save_marching_cubes_mesh(
             mesh_output_path, np.tile(marching_cubes_res, 3)
         )
@@ -148,19 +150,48 @@ def mesh(
         testbed.fov_axis = 0
         testbed.fov = ref_transforms["camera_angle_x"] * 180 / np.pi
         ref_transforms["frames"].sort(key=lambda frm: frm["file_path"])
-        for frame_idx in range(len(ref_transforms["frames"]) - 1):
+
+        camera_rotations = []
+        camera_translations = []
+        for ref_trans in ref_transforms["frames"]:
+            ref_trans_mtx = np.array(ref_trans["transform_matrix"])
+            camera_rotations.append(Rotation.from_matrix(ref_trans_mtx[:3, :3]))
+            camera_translations.append(ref_trans_mtx[:3, 3:])
+
+        # NOTE(brendan): use spherical linear interpolation (slerp) to
+        # interpolate rotations smoothly.
+        # This is because linear interpolation of rotation matrix parameters
+        # does not result in a smooth rotation
+        num_frames = len(ref_transforms["frames"])
+        total_interpolated_frames = (n_interpolation * (num_frames - 1)) + 1
+        camera_slerp = Slerp(
+            [i * n_interpolation for i in range(num_frames)], camera_rotations
+        )
+        interp_camera_rotations = camera_slerp(
+            list(range(total_interpolated_frames))
+        ).as_matrix()
+
+        for frame_idx in range(num_frames - 1):
             ref_frame = ref_transforms["frames"][frame_idx]
-            cam_matrix = ref_frame["transform_matrix"]
-            next_cam_matrix = ref_transforms["frames"][frame_idx + 1][
-                "transform_matrix"
-            ]
 
             for interpolation_idx in range(n_interpolation):
                 alpha = interpolation_idx / n_interpolation
-                lerp_cam_matrix = ((1.0 - alpha) * np.array(cam_matrix)) + (
-                    alpha * np.array(next_cam_matrix)
+                interp_camera_trans = (
+                    (1.0 - alpha) * camera_translations[frame_idx]
+                ) + (alpha * camera_translations[frame_idx + 1])
+
+                interp_cam_rot = interp_camera_rotations[
+                    (frame_idx * n_interpolation) + interpolation_idx
+                ]
+                interp_transform_matrix = np.concatenate(
+                    [interp_cam_rot, interp_camera_trans], axis=1
                 )
-                testbed.set_nerf_camera_matrix(lerp_cam_matrix[:-1, :])
+                interp_transform_matrix = np.concatenate(
+                    [interp_transform_matrix, np.array([[0.0, 0.0, 0.0, 1.0]])], axis=0
+                )
+
+                testbed.set_nerf_camera_matrix(interp_transform_matrix[:-1, :])
+
                 outname = os.path.join(
                     screenshot_dir,
                     Path(ref_frame["file_path"]).stem + f"_{interpolation_idx}.png",
