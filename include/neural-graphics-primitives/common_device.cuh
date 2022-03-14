@@ -77,10 +77,10 @@ inline __host__ __device__ Eigen::Array3f linear_to_srgb_derivative(const Eigen:
 
 template <uint32_t N_DIMS, typename T>
 __host__ __device__ Eigen::Matrix<float, N_DIMS, 1> read_image(const T* __restrict__ data, const Eigen::Vector2i& resolution, const Eigen::Vector2f& pos) {
-	auto pos_float = Eigen::Vector2f{pos.x() * (float)(resolution.x()-1), pos.y() * (float)(resolution.y()-1)};
-	Eigen::Vector2i texel = pos_float.cast<int>();
+	const Eigen::Vector2f pos_float = Eigen::Vector2f{pos.x() * (float)(resolution.x()-1), pos.y() * (float)(resolution.y()-1)};
+	const Eigen::Vector2i texel = pos_float.cast<int>();
 
-	auto weight = pos_float - texel.cast<float>();
+	const Eigen::Vector2f weight = pos_float - texel.cast<float>();
 
 	auto read_val = [&](Eigen::Vector2i pos) {
 		pos.x() = std::max(std::min(pos.x(), resolution.x()-1), 0);
@@ -100,22 +100,20 @@ __host__ __device__ Eigen::Matrix<float, N_DIMS, 1> read_image(const T* __restri
 		return result;
 	};
 
-	auto result = (
+	return (
 		(1 - weight.x()) * (1 - weight.y()) * read_val({texel.x(), texel.y()}) +
 		(weight.x()) * (1 - weight.y()) * read_val({texel.x()+1, texel.y()}) +
 		(1 - weight.x()) * (weight.y()) * read_val({texel.x(), texel.y()+1}) +
 		(weight.x()) * (weight.y()) * read_val({texel.x()+1, texel.y()+1})
 	);
-
-	return result;
 }
 
 template <uint32_t N_DIMS, typename T>
 __device__ void deposit_image_gradient(const Eigen::Matrix<float, N_DIMS, 1>& value, T* __restrict__ gradient, T* __restrict__ gradient_weight, const Eigen::Vector2i& resolution, const Eigen::Vector2f& pos) {
-	auto pos_float = Eigen::Vector2f{pos.x() * (resolution.x()-1), pos.y() * (resolution.y()-1)};
-	Eigen::Vector2i texel = pos_float.cast<int>();
+	const Eigen::Vector2f pos_float = Eigen::Vector2f{pos.x() * (resolution.x()-1), pos.y() * (resolution.y()-1)};
+	const Eigen::Vector2i texel = pos_float.cast<int>();
 
-	auto weight = pos_float - texel.cast<float>();
+	const Eigen::Vector2f weight = pos_float - texel.cast<float>();
 
 	auto deposit_val = [&](const Eigen::Matrix<float, N_DIMS, 1>& value, T weight, Eigen::Vector2i pos) {
 		pos.x() = std::max(std::min(pos.x(), resolution.x()-1), 0);
@@ -200,7 +198,6 @@ __device__ __host__ inline void iterative_camera_undistortion(const T* params, T
 	*v = x(1);
 }
 
-
 inline __host__ __device__ Ray pixel_to_ray_pinhole(
 	uint32_t spp,
 	const Eigen::Vector2i& pixel,
@@ -211,7 +208,7 @@ inline __host__ __device__ Ray pixel_to_ray_pinhole(
 	float focus_z = 1.0f,
 	float dof = 0.0f
 ) {
-	auto uv = pixel.cast<float>().cwiseQuotient(resolution.cast<float>());
+	const Eigen::Vector2f uv = pixel.cast<float>().cwiseQuotient(resolution.cast<float>());
 
 	Eigen::Vector3f dir = {
 		(uv.x() - screen_center.x()) * (float)resolution.x() / focal_length.x(),
@@ -223,6 +220,25 @@ inline __host__ __device__ Ray pixel_to_ray_pinhole(
 
 	Eigen::Vector3f origin = camera_matrix.col(3);
 	return {origin, dir};
+}
+
+inline __host__ __device__ Eigen::Matrix<float, 3, 4> get_xform_given_rolling_shutter(const TrainingXForm &training_xform, const Eigen::Vector4f &rolling_shutter, const Eigen::Vector2f &uv, float motionblur_time) {
+	float pixel_t = rolling_shutter.x() + rolling_shutter.y() * uv.x() + rolling_shutter.z() * uv.y() + rolling_shutter.w() * motionblur_time;
+	return training_xform.start + (training_xform.end - training_xform.start) * pixel_t;
+}
+
+inline __host__ __device__ Eigen::Vector3f f_theta_undistortion(const Eigen::Vector2f &uv, const Eigen::Vector2f &screen_center, const CameraDistortion& camera_distortion, const Eigen::Vector3f& error_direction) {
+	// we take f_theta intrinsics to be: resx, resy, r0, r1, r2, r3; we rescale to whatever res the intrinsics specify.
+	float xpix = (uv.x() - screen_center.x()) * camera_distortion.params[5];
+	float ypix = (uv.y() - screen_center.y()) * camera_distortion.params[6];
+	float norm = sqrtf(xpix*xpix + ypix*ypix);
+	float alpha = camera_distortion.params[0] + norm * (camera_distortion.params[1] + norm * (camera_distortion.params[2] + norm * (camera_distortion.params[3] + norm * camera_distortion.params[4])));
+	float sin_alpha, cos_alpha;
+	sincosf(alpha, &sin_alpha, &cos_alpha);
+	if (cos_alpha <= std::numeric_limits<float>::min() || norm == 0.f)
+		return error_direction;
+	sin_alpha *= 1.f/norm;
+	return { sin_alpha * xpix, sin_alpha * ypix, cos_alpha };
 }
 
 inline __host__ __device__ Ray pixel_to_ray(
@@ -240,15 +256,23 @@ inline __host__ __device__ Ray pixel_to_ray(
 	const Eigen::Vector2i distortion_resolution = Eigen::Vector2i::Zero()
 ) {
 	Eigen::Vector2f offset = ld_random_pixel_offset(snap_to_pixel_centers ? 0 : spp, pixel.x(), pixel.y());
-	auto uv = (pixel.cast<float>() + offset).cwiseQuotient(resolution.cast<float>());
+	Eigen::Vector2f uv = (pixel.cast<float>() + offset).cwiseQuotient(resolution.cast<float>());
 
-	Eigen::Vector3f dir = {
-		(uv.x() - screen_center.x()) * (float)resolution.x() / focal_length.x(),
-		(uv.y() - screen_center.y()) * (float)resolution.y() / focal_length.y(),
-		1.0f
-	};
-	if (!camera_distortion.is_zero()) {
-		iterative_camera_undistortion(camera_distortion.params, &dir.x(), &dir.y());
+	Eigen::Vector3f dir;
+	if (camera_distortion.mode == ECameraDistortionMode::FTheta) {
+		dir = f_theta_undistortion(uv, screen_center, camera_distortion, {1000.f, 0.f, 0.f});
+		if (dir.x() == 1000.f) {
+			return {{1000.f, 0.f, 0.f}, {0.f, 0.f, 1.f}}; // return a point outside the aabb so the pixel is not rendered
+		}
+	} else {
+		dir = {
+			(uv.x() - screen_center.x()) * (float)resolution.x() / focal_length.x(),
+			(uv.y() - screen_center.y()) * (float)resolution.y() / focal_length.y(),
+			1.0f
+		};
+		if (camera_distortion.mode == ECameraDistortionMode::Iterative) {
+			iterative_camera_undistortion(camera_distortion.params, &dir.x(), &dir.y());
+		}
 	}
 	if (distortion_data) {
 		dir.head<2>() += read_image<2>(distortion_data, distortion_resolution, uv);
