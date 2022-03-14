@@ -98,6 +98,7 @@ def run_ffmpeg(args):
     except:
         pass
     do_system(f"mkdir {images}")
+
     time_slice_value = ""
     time_slice = args.time_slice
     if time_slice:

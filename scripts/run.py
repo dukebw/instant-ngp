@@ -74,6 +74,12 @@ def parse_args():
         default="",
         help="Path to a nerf style transforms json from which we will compute PSNR.",
     )
+    parser.add_argument(
+        "--near_distance",
+        default=-1,
+        type=float,
+        help="set the distance from the camera at which training rays start for nerf. <0 means use ngp default",
+    )
 
     parser.add_argument(
         "--screenshot_transforms",
@@ -231,6 +237,10 @@ if __name__ == "__main__":
     network_stem = os.path.splitext(os.path.basename(network))[0]
     if args.mode == "sdf":
         setup_colored_sdf(testbed, args.scene)
+
+    if args.near_distance >= 0.0:
+        print("NeRF training ray near_distance ", args.near_distance)
+        testbed.nerf.training.near_distance = args.near_distance
 
     if args.nerf_compatibility:
         print(f"NeRF compatibility mode enabled")
