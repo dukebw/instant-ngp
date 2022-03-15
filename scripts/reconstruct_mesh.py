@@ -85,7 +85,11 @@ def cli():
     "--screenshot-transforms",
     type=str,
     default=None,
-    help="Path to a nerf style transforms.json from which to save screenshots",
+    help="""
+         Path to a nerf style transforms.json from which to save screenshots.
+         The format is expected to be that of camera paths saved from the
+         testbed GUI.
+         """,
 )
 @click.option("--screenshot-width", type=int, default=1920, help="Screenshot width")
 @click.option(
@@ -147,61 +151,37 @@ def mesh(
         )
 
     if ref_transforms is not None:
+        # NOTE(brendan): based on the batch frame rendering for camera paths
+        # described here:
+        # https://github.com/NVlabs/instant-ngp/issues/31#issuecomment-1014805317
         testbed.fov_axis = 0
-        testbed.fov = ref_transforms["camera_angle_x"] * 180 / np.pi
-        ref_transforms["frames"].sort(key=lambda frm: frm["file_path"])
+        testbed.fov = ref_transforms["path"][0]["fov"]
 
-        camera_rotations = []
-        camera_translations = []
-        for ref_trans in ref_transforms["frames"]:
-            ref_trans_mtx = np.array(ref_trans["transform_matrix"])
-            camera_rotations.append(Rotation.from_matrix(ref_trans_mtx[:3, :3]))
-            camera_translations.append(ref_trans_mtx[:3, 3:])
+        total_interpolated_frames = (
+            n_interpolation * (len(ref_transforms["path"]) - 1)
+        ) + 1
 
-        # NOTE(brendan): use spherical linear interpolation (slerp) to
-        # interpolate rotations smoothly.
-        # This is because linear interpolation of rotation matrix parameters
-        # does not result in a smooth rotation
-        num_frames = len(ref_transforms["frames"])
-        total_interpolated_frames = (n_interpolation * (num_frames - 1)) + 1
-        camera_slerp = Slerp(
-            [i * n_interpolation for i in range(num_frames)], camera_rotations
-        )
-        interp_camera_rotations = camera_slerp(
-            list(range(total_interpolated_frames))
-        ).as_matrix()
+        testbed.load_camera_path(screenshot_transforms)
 
-        for frame_idx in range(num_frames - 1):
-            ref_frame = ref_transforms["frames"][frame_idx]
-
+        os.makedirs(screenshot_dir, exist_ok=True)
+        testbed.camera_smoothing = True
+        for frame_idx in range(len(ref_transforms["path"]) - 1):
             for interpolation_idx in range(n_interpolation):
-                alpha = interpolation_idx / n_interpolation
-                interp_camera_trans = (
-                    (1.0 - alpha) * camera_translations[frame_idx]
-                ) + (alpha * camera_translations[frame_idx + 1])
+                rendered_idx = (frame_idx * n_interpolation) + interpolation_idx
 
-                interp_cam_rot = interp_camera_rotations[
-                    (frame_idx * n_interpolation) + interpolation_idx
-                ]
-                interp_transform_matrix = np.concatenate(
-                    [interp_cam_rot, interp_camera_trans], axis=1
-                )
-                interp_transform_matrix = np.concatenate(
-                    [interp_transform_matrix, np.array([[0.0, 0.0, 0.0, 1.0]])], axis=0
-                )
-
-                testbed.set_nerf_camera_matrix(interp_transform_matrix[:-1, :])
-
-                outname = os.path.join(
-                    screenshot_dir,
-                    Path(ref_frame["file_path"]).stem + f"_{interpolation_idx}.png",
-                )
+                outname = os.path.join(screenshot_dir, f"{rendered_idx:04d}.png")
 
                 logging.info(f"Rendering {outname}")
                 image = testbed.render(
-                    screenshot_width, screenshot_height, screenshot_spp, True
+                    screenshot_width,
+                    screenshot_height,
+                    screenshot_spp,
+                    True,
+                    rendered_idx / total_interpolated_frames,
+                    (rendered_idx + 1) / total_interpolated_frames,
+                    fps=n_interpolation,
+                    shutter_fraction=0.5,
                 )
-                os.makedirs(os.path.dirname(outname), exist_ok=True)
                 write_image(outname, image)
     else:
         outname = os.path.join(screenshot_dir, Path(base_network_path).stem)
