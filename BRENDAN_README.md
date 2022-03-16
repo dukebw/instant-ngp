@@ -40,3 +40,9 @@ otherwise I got an error about `GLIB_CXX_3.4.29` not found.
   The trickiest part of that was that I had to comment out lines 79-80 in
   `/usr/include/c++/11/type_traits`.
   See: https://github.com/colmap/colmap/issues/1418
+
+- clang-format command line:
+```
+clang-format -i ./include/**/*.{cu,cuh,h,cpp}
+clang-format -i ./src/**/*.{cu,cuh,h,cpp}
+```

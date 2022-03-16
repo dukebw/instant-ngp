@@ -25,25 +25,29 @@
 NGP_NAMESPACE_BEGIN
 
 template <typename T>
-void waitAll(T&& futures) {
+void
+waitAll(T&& futures) {
     for (auto& f : futures) {
         f.get();
     }
 }
 
 class ThreadPool {
-public:
+   public:
     ThreadPool();
     ThreadPool(size_t maxNumThreads, bool force = false);
     virtual ~ThreadPool();
 
-    template<class F>
-    auto enqueueTask(F&& f, bool highPriority = false) -> std::future<std::result_of_t <F()>> {
+    template <class F>
+    auto
+    enqueueTask(F&& f, bool highPriority = false)
+        -> std::future<std::result_of_t<F()>> {
         using return_type = std::result_of_t<F()>;
 
         ++mNumTasksInSystem;
 
-        auto task = std::make_shared<std::packaged_task<return_type()>>(std::forward<F>(f));
+        auto task = std::make_shared<std::packaged_task<return_type()>>(
+            std::forward<F>(f));
 
         auto res = task->get_future();
 
@@ -61,19 +65,29 @@ public:
         return res;
     }
 
-    void startThreads(size_t num);
-    void shutdownThreads(size_t num);
+    void
+    startThreads(size_t num);
+    void
+    shutdownThreads(size_t num);
 
-    size_t numTasksInSystem() const {
+    size_t
+    numTasksInSystem() const {
         return mNumTasksInSystem;
     }
 
-    void waitUntilFinished();
-    void waitUntilFinishedFor(const std::chrono::microseconds Duration);
-    void flushQueue();
+    void
+    waitUntilFinished();
+    void
+    waitUntilFinishedFor(const std::chrono::microseconds Duration);
+    void
+    flushQueue();
 
     template <typename Int, typename F>
-    void parallelForAsync(Int start, Int end, F body, std::vector<std::future<void>>& futures) {
+    void
+    parallelForAsync(Int start,
+                     Int end,
+                     F body,
+                     std::vector<std::future<void>>& futures) {
         Int localNumThreads = (Int)mNumThreads;
 
         Int range = end - start;
@@ -91,18 +105,20 @@ public:
     }
 
     template <typename Int, typename F>
-    std::vector<std::future<void>> parallelForAsync(Int start, Int end, F body) {
+    std::vector<std::future<void>>
+    parallelForAsync(Int start, Int end, F body) {
         std::vector<std::future<void>> futures;
         parallelForAsync(start, end, body, futures);
         return futures;
     }
 
     template <typename Int, typename F>
-    void parallelFor(Int start, Int end, F body) {
+    void
+    parallelFor(Int start, Int end, F body) {
         waitAll(parallelForAsync(start, end, body));
     }
 
-private:
+   private:
     size_t mNumThreads = 0;
     std::vector<std::thread> mThreads;
 
