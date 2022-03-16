@@ -38,8 +38,7 @@ srgb_to_linear(float srgb) {
 
 inline __host__ __device__ Eigen::Array3f
 srgb_to_linear(const Eigen::Array3f& x) {
-    return {
-        srgb_to_linear(x.x()), srgb_to_linear(x.y()), (srgb_to_linear(x.z()))};
+    return {srgb_to_linear(x.x()), srgb_to_linear(x.y()), (srgb_to_linear(x.z()))};
 }
 
 inline __host__ __device__ float
@@ -69,8 +68,7 @@ linear_to_srgb(float linear) {
 
 inline __host__ __device__ Eigen::Array3f
 linear_to_srgb(const Eigen::Array3f& x) {
-    return {
-        linear_to_srgb(x.x()), linear_to_srgb(x.y()), (linear_to_srgb(x.z()))};
+    return {linear_to_srgb(x.x()), linear_to_srgb(x.y()), (linear_to_srgb(x.z()))};
 }
 
 inline __host__ __device__ float
@@ -94,9 +92,8 @@ __host__ __device__ Eigen::Matrix<float, N_DIMS, 1>
 read_image(const T* __restrict__ data,
            const Eigen::Vector2i& resolution,
            const Eigen::Vector2f& pos) {
-    const Eigen::Vector2f pos_float =
-        Eigen::Vector2f{pos.x() * (float)(resolution.x() - 1),
-                        pos.y() * (float)(resolution.y() - 1)};
+    const Eigen::Vector2f pos_float = Eigen::Vector2f{
+        pos.x() * (float)(resolution.x() - 1), pos.y() * (float)(resolution.y() - 1)};
     const Eigen::Vector2i texel = pos_float.cast<int>();
 
     const Eigen::Vector2f weight = pos_float - texel.cast<float>();
@@ -107,11 +104,13 @@ read_image(const T* __restrict__ data,
 
         Eigen::Matrix<float, N_DIMS, 1> result;
         if (std::is_same<T, float>::value) {
-            result = *(Eigen::Matrix<T, N_DIMS, 1>*)&data
-                         [(pos.x() + pos.y() * resolution.x()) * N_DIMS];
+            result = *(Eigen::Matrix<T, N_DIMS, 1>*)&data[(pos.x() +
+                                                           pos.y() * resolution.x()) *
+                                                          N_DIMS];
         } else {
-            auto val = *(tcnn::vector_t<T, N_DIMS>*)&data
-                           [(pos.x() + pos.y() * resolution.x()) * N_DIMS];
+            auto val = *(
+                tcnn::vector_t<T, N_DIMS>*)&data[(pos.x() + pos.y() * resolution.x()) *
+                                                 N_DIMS];
 
             NGP_PRAGMA_UNROLL
             for (uint32_t i = 0; i < N_DIMS; ++i) {
@@ -121,11 +120,10 @@ read_image(const T* __restrict__ data,
         return result;
     };
 
-    return (
-        (1 - weight.x()) * (1 - weight.y()) * read_val({texel.x(), texel.y()}) +
-        (weight.x()) * (1 - weight.y()) * read_val({texel.x() + 1, texel.y()}) +
-        (1 - weight.x()) * (weight.y()) * read_val({texel.x(), texel.y() + 1}) +
-        (weight.x()) * (weight.y()) * read_val({texel.x() + 1, texel.y() + 1}));
+    return ((1 - weight.x()) * (1 - weight.y()) * read_val({texel.x(), texel.y()}) +
+            (weight.x()) * (1 - weight.y()) * read_val({texel.x() + 1, texel.y()}) +
+            (1 - weight.x()) * (weight.y()) * read_val({texel.x(), texel.y() + 1}) +
+            (weight.x()) * (weight.y()) * read_val({texel.x() + 1, texel.y() + 1}));
 }
 
 template <uint32_t N_DIMS, typename T>
@@ -135,8 +133,8 @@ deposit_image_gradient(const Eigen::Matrix<float, N_DIMS, 1>& value,
                        T* __restrict__ gradient_weight,
                        const Eigen::Vector2i& resolution,
                        const Eigen::Vector2f& pos) {
-    const Eigen::Vector2f pos_float = Eigen::Vector2f{
-        pos.x() * (resolution.x() - 1), pos.y() * (resolution.y() - 1)};
+    const Eigen::Vector2f pos_float =
+        Eigen::Vector2f{pos.x() * (resolution.x() - 1), pos.y() * (resolution.y() - 1)};
     const Eigen::Vector2i texel = pos_float.cast<int>();
 
     const Eigen::Vector2f weight = pos_float - texel.cast<float>();
@@ -152,40 +150,30 @@ deposit_image_gradient(const Eigen::Matrix<float, N_DIMS, 1>& value,
         if (std::is_same<T, __half>::value) {
             for (uint32_t c = 0; c < N_DIMS; c += 2) {
                 atomicAdd(
-                    (__half2*)&gradient[(pos.x() + pos.y() * resolution.x()) *
-                                            N_DIMS +
+                    (__half2*)&gradient[(pos.x() + pos.y() * resolution.x()) * N_DIMS +
                                         c],
                     {(T)value[c] * weight, (T)value[c + 1] * weight});
-                atomicAdd(
-                    (__half2*)&gradient_weight
-                        [(pos.x() + pos.y() * resolution.x()) * N_DIMS + c],
-                    {weight, weight});
+                atomicAdd((__half2*)&gradient_weight
+                              [(pos.x() + pos.y() * resolution.x()) * N_DIMS + c],
+                          {weight, weight});
             }
         } else
 #endif
         {
             for (uint32_t c = 0; c < N_DIMS; ++c) {
+                atomicAdd(&gradient[(pos.x() + pos.y() * resolution.x()) * N_DIMS + c],
+                          (T)value[c] * weight);
                 atomicAdd(
-                    &gradient[(pos.x() + pos.y() * resolution.x()) * N_DIMS +
-                              c],
-                    (T)value[c] * weight);
-                atomicAdd(
-                    &gradient_weight[(pos.x() + pos.y() * resolution.x()) *
-                                         N_DIMS +
-                                     c],
+                    &gradient_weight[(pos.x() + pos.y() * resolution.x()) * N_DIMS + c],
                     weight);
             }
         }
     };
 
-    deposit_val(
-        value, (1 - weight.x()) * (1 - weight.y()), {texel.x(), texel.y()});
-    deposit_val(
-        value, (weight.x()) * (1 - weight.y()), {texel.x() + 1, texel.y()});
-    deposit_val(
-        value, (1 - weight.x()) * (weight.y()), {texel.x(), texel.y() + 1});
-    deposit_val(
-        value, (weight.x()) * (weight.y()), {texel.x() + 1, texel.y() + 1});
+    deposit_val(value, (1 - weight.x()) * (1 - weight.y()), {texel.x(), texel.y()});
+    deposit_val(value, (weight.x()) * (1 - weight.y()), {texel.x() + 1, texel.y()});
+    deposit_val(value, (1 - weight.x()) * (weight.y()), {texel.x(), texel.y() + 1});
+    deposit_val(value, (weight.x()) * (weight.y()), {texel.x() + 1, texel.y() + 1});
 }
 
 template <typename T>
@@ -280,8 +268,7 @@ get_xform_given_rolling_shutter(const TrainingXForm& training_xform,
     float pixel_t = rolling_shutter.x() + rolling_shutter.y() * uv.x() +
                     rolling_shutter.z() * uv.y() +
                     rolling_shutter.w() * motionblur_time;
-    return training_xform.start +
-           (training_xform.end - training_xform.start) * pixel_t;
+    return training_xform.start + (training_xform.end - training_xform.start) * pixel_t;
 }
 
 inline __host__ __device__ Eigen::Vector3f
@@ -308,21 +295,20 @@ f_theta_undistortion(const Eigen::Vector2f& uv,
 }
 
 inline __host__ __device__ Ray
-pixel_to_ray(
-    uint32_t spp,
-    const Eigen::Vector2i& pixel,
-    const Eigen::Vector2i& resolution,
-    const Eigen::Vector2f& focal_length,
-    const Eigen::Matrix<float, 3, 4>& camera_matrix,
-    const Eigen::Vector2f& screen_center,
-    bool snap_to_pixel_centers = false,
-    float focus_z = 1.0f,
-    float dof = 0.0f,
-    const CameraDistortion& camera_distortion = {},
-    const float* __restrict__ distortion_data = nullptr,
-    const Eigen::Vector2i distortion_resolution = Eigen::Vector2i::Zero()) {
-    Eigen::Vector2f offset = ld_random_pixel_offset(
-        snap_to_pixel_centers ? 0 : spp, pixel.x(), pixel.y());
+pixel_to_ray(uint32_t spp,
+             const Eigen::Vector2i& pixel,
+             const Eigen::Vector2i& resolution,
+             const Eigen::Vector2f& focal_length,
+             const Eigen::Matrix<float, 3, 4>& camera_matrix,
+             const Eigen::Vector2f& screen_center,
+             bool snap_to_pixel_centers = false,
+             float focus_z = 1.0f,
+             float dof = 0.0f,
+             const CameraDistortion& camera_distortion = {},
+             const float* __restrict__ distortion_data = nullptr,
+             const Eigen::Vector2i distortion_resolution = Eigen::Vector2i::Zero()) {
+    Eigen::Vector2f offset =
+        ld_random_pixel_offset(snap_to_pixel_centers ? 0 : spp, pixel.x(), pixel.y());
     Eigen::Vector2f uv =
         (pixel.cast<float>() + offset).cwiseQuotient(resolution.cast<float>());
 
@@ -336,19 +322,15 @@ pixel_to_ray(
                                        // pixel is not rendered
         }
     } else {
-        dir = {(uv.x() - screen_center.x()) * (float)resolution.x() /
-                   focal_length.x(),
-               (uv.y() - screen_center.y()) * (float)resolution.y() /
-                   focal_length.y(),
+        dir = {(uv.x() - screen_center.x()) * (float)resolution.x() / focal_length.x(),
+               (uv.y() - screen_center.y()) * (float)resolution.y() / focal_length.y(),
                1.0f};
         if (camera_distortion.mode == ECameraDistortionMode::Iterative) {
-            iterative_camera_undistortion(
-                camera_distortion.params, &dir.x(), &dir.y());
+            iterative_camera_undistortion(camera_distortion.params, &dir.x(), &dir.y());
         }
     }
     if (distortion_data) {
-        dir.head<2>() +=
-            read_image<2>(distortion_data, distortion_resolution, uv);
+        dir.head<2>() += read_image<2>(distortion_data, distortion_resolution, uv);
     }
 
     dir = camera_matrix.block<3, 3>(0, 0) * dir;
@@ -360,12 +342,11 @@ pixel_to_ray(
 
     Eigen::Vector3f lookat = origin + dir * focus_z;
     Eigen::Vector2f blur =
-        dof * square2disk_shirley(
-                  ld_random_val_2d(spp,
-                                   (uint32_t)pixel.x() * 19349663 +
-                                       (uint32_t)pixel.y() * 96925573) *
-                      2.0f -
-                  Eigen::Vector2f::Ones());
+        dof * square2disk_shirley(ld_random_val_2d(spp,
+                                                   (uint32_t)pixel.x() * 19349663 +
+                                                       (uint32_t)pixel.y() * 96925573) *
+                                      2.0f -
+                                  Eigen::Vector2f::Ones());
     origin += camera_matrix.block<3, 2>(0, 0) * blur;
     dir = (lookat - origin) / focus_z;
 
@@ -378,11 +359,9 @@ fov_to_focal_length(int resolution, float degrees) {
 }
 
 inline __host__ __device__ Eigen::Vector2f
-fov_to_focal_length(const Eigen::Vector2i& resolution,
-                    const Eigen::Vector2f& degrees) {
-    return 0.5f *
-           resolution.cast<float>().cwiseQuotient(
-               (0.5f * degrees * (float)PI() / 180).array().tan().matrix());
+fov_to_focal_length(const Eigen::Vector2i& resolution, const Eigen::Vector2f& degrees) {
+    return 0.5f * resolution.cast<float>().cwiseQuotient(
+                      (0.5f * degrees * (float)PI() / 180).array().tan().matrix());
 }
 
 inline __host__ __device__ float
@@ -484,8 +463,7 @@ from_rgba32(const uint64_t num_pixels,
 
     float alpha = rgba[3] * (1.0f / 255.0f);
     // NSVF dataset has 'white = transparent' madness
-    if (white_2_transparent && rgba[0] == 255 && rgba[1] == 255 &&
-        rgba[2] == 255) {
+    if (white_2_transparent && rgba[0] == 255 && rgba[1] == 255 && rgba[2] == 255) {
         alpha = 0.f;
     }
     if (black_2_transparent && rgba[0] == 0 && rgba[1] == 0 && rgba[2] == 0) {

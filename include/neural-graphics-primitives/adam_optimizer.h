@@ -45,15 +45,14 @@ class AdamOptimizer {
             m_hparams.learning_rate *
             std::sqrt(1 - std::pow(m_hparams.beta2, (float)m_state.iter)) /
             (1 - std::pow(m_hparams.beta1, (float)m_state.iter));
-        m_state.first_moment = m_hparams.beta1 * m_state.first_moment +
-                               (1 - m_hparams.beta1) * gradient;
-        m_state.second_moment =
-            m_hparams.beta2 * m_state.second_moment +
-            (1 - m_hparams.beta2) * gradient.cwiseProduct(gradient);
+        m_state.first_moment =
+            m_hparams.beta1 * m_state.first_moment + (1 - m_hparams.beta1) * gradient;
+        m_state.second_moment = m_hparams.beta2 * m_state.second_moment +
+                                (1 - m_hparams.beta2) * gradient.cwiseProduct(gradient);
         m_state.variable -=
-            actual_learning_rate * m_state.first_moment.cwiseQuotient(
-                                       m_state.second_moment.cwiseSqrt() +
-                                       T::Constant(m_hparams.epsilon));
+            actual_learning_rate *
+            m_state.first_moment.cwiseQuotient(m_state.second_moment.cwiseSqrt() +
+                                               T::Constant(m_hparams.epsilon));
     }
 
     uint32_t
@@ -123,15 +122,14 @@ class RotationAdamOptimizer {
             m_hparams.learning_rate *
             std::sqrt(1 - std::pow(m_hparams.beta2, m_state.iter)) /
             (1 - std::pow(m_hparams.beta1, m_state.iter));
-        m_state.first_moment = m_hparams.beta1 * m_state.first_moment +
-                               (1 - m_hparams.beta1) * gradient;
-        m_state.second_moment =
-            m_hparams.beta2 * m_state.second_moment +
-            (1 - m_hparams.beta2) * gradient.cwiseProduct(gradient);
-        Eigen::Vector3f rot = actual_learning_rate *
-                              m_state.first_moment.cwiseQuotient(
-                                  m_state.second_moment.cwiseSqrt() +
-                                  Eigen::Vector3f::Constant(m_hparams.epsilon));
+        m_state.first_moment =
+            m_hparams.beta1 * m_state.first_moment + (1 - m_hparams.beta1) * gradient;
+        m_state.second_moment = m_hparams.beta2 * m_state.second_moment +
+                                (1 - m_hparams.beta2) * gradient.cwiseProduct(gradient);
+        Eigen::Vector3f rot =
+            actual_learning_rate * m_state.first_moment.cwiseQuotient(
+                                       m_state.second_moment.cwiseSqrt() +
+                                       Eigen::Vector3f::Constant(m_hparams.epsilon));
         float rot_len = rot.norm();
         float var_len = variable().norm();
 

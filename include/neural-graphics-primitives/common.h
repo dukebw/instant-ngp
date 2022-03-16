@@ -91,8 +91,7 @@ enum class ERandomMode : int {
     Stratified,
     NumImageRandomModes,
 };
-static constexpr const char* RandomModeStr =
-    "Random\0Halton\0Sobol\0Stratified\0\0";
+static constexpr const char* RandomModeStr = "Random\0Halton\0Sobol\0Stratified\0\0";
 
 enum class ELossType : int {
     L2,
@@ -120,8 +119,7 @@ enum class EMeshSdfMode : int {
     Raystab,
     PathEscape,
 };
-static constexpr const char* MeshSdfModeStr =
-    "Watertight\0Raystab\0PathEscape\0\0";
+static constexpr const char* MeshSdfModeStr = "Watertight\0Raystab\0PathEscape\0\0";
 
 enum class EColorSpace : int {
     Linear,
@@ -131,8 +129,7 @@ enum class EColorSpace : int {
 static constexpr const char* ColorSpaceStr = "Linear\0SRGB\0\0";
 
 enum class ETonemapCurve : int { Identity, ACES, Hable, Reinhard };
-static constexpr const char* TonemapCurveStr =
-    "Identity\0ACES\0Hable\0Reinhard\0\0";
+static constexpr const char* TonemapCurveStr = "Identity\0ACES\0Hable\0Reinhard\0\0";
 
 enum class ETestbedMode : int {
     Nerf,

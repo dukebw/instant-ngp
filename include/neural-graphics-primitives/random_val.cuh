@@ -105,9 +105,9 @@ fibonacci_dir(uint32_t i, const Eigen::Vector2f& offset) {
     }
 
     static constexpr float GOLDEN_RATIO = 1.6180339887498948482045868343656f;
-    return cylindrical_to_dir(Eigen::Vector2f{
-        fractf((i + epsilon) / (N_DIRS - 1 + 2 * epsilon) + offset.x()),
-        fractf(i / GOLDEN_RATIO + offset.y())});
+    return cylindrical_to_dir(
+        Eigen::Vector2f{fractf((i + epsilon) / (N_DIRS - 1 + 2 * epsilon) + offset.x()),
+                        fractf(i / GOLDEN_RATIO + offset.y())});
 }
 
 template <typename RNG>
@@ -170,8 +170,7 @@ random_val_3d(RNG& rng) {
 template <typename RNG>
 inline __host__ __device__ Eigen::Vector4f
 random_val_4d(RNG& rng) {
-    return {
-        rng.next_float(), rng.next_float(), rng.next_float(), rng.next_float()};
+    return {rng.next_float(), rng.next_float(), rng.next_float(), rng.next_float()};
 }
 
 // The below code has been adapted from Burley [2019]
@@ -293,8 +292,7 @@ inline __host__ __device__ Eigen::Vector4f
 ld_random_val_4d(uint32_t index, uint32_t seed) {
     constexpr float S = float(1.0 / (1ull << 32));
     Vector4i32 x = shuffled_scrambled_sobol4d(index, seed);
-    return {
-        (float)x.x() * S, (float)x.y() * S, (float)x.z() * S, (float)x.w() * S};
+    return {(float)x.x() * S, (float)x.y() * S, (float)x.z() * S, (float)x.w() * S};
 }
 
 inline __host__ __device__ Eigen::Vector2f
@@ -314,9 +312,7 @@ ld_random_val(uint32_t index, uint32_t seed, uint32_t dim = 0) {
 }
 
 inline __host__ __device__ Eigen::Vector2f
-ld_random_pixel_offset(const uint32_t spp,
-                       const uint32_t /*x*/,
-                       const uint32_t /*y*/) {
+ld_random_pixel_offset(const uint32_t spp, const uint32_t /*x*/, const uint32_t /*y*/) {
     Eigen::Vector2f offset = Eigen::Vector2f::Constant(0.5f) -
                              ld_random_val_2d(0, 0xdeadbeef) +
                              ld_random_val_2d(spp, 0xdeadbeef);

@@ -145,8 +145,7 @@ to_json(nlohmann::json& j, const NerfDataset& dataset) {
     for (size_t i = 0; i < dataset.n_images; ++i) {
         j["metadata"].emplace_back();
         j["xforms"].emplace_back();
-        to_json(j["metadata"].at(i)["focal_length"],
-                dataset.metadata[i].focal_length);
+        to_json(j["metadata"].at(i)["focal_length"], dataset.metadata[i].focal_length);
         to_json(j["metadata"].at(i)["camera_distortion"],
                 dataset.metadata[i].camera_distortion);
         to_json(j["metadata"].at(i)["principal_point"],
@@ -190,15 +189,12 @@ from_json(const nlohmann::json& j, NerfDataset& dataset) {
         dataset.metadata[i] = global_metadata;
         from_json(j.at("xforms").at(i), dataset.xforms[i]);
         if (j.contains("focal_lengths"))
-            from_json(j.at("focal_lengths").at(i),
-                      dataset.metadata[i].focal_length);
+            from_json(j.at("focal_lengths").at(i), dataset.metadata[i].focal_length);
         if (j.contains("metadata")) {
             auto& ji = j["metadata"].at(i);
             from_json(ji.at("focal_length"), dataset.metadata[i].focal_length);
-            from_json(ji.at("principal_point"),
-                      dataset.metadata[i].principal_point);
-            from_json(ji.at("rolling_shutter"),
-                      dataset.metadata[i].rolling_shutter);
+            from_json(ji.at("principal_point"), dataset.metadata[i].principal_point);
+            from_json(ji.at("rolling_shutter"), dataset.metadata[i].rolling_shutter);
             from_json(ji.at("camera_distortion"),
                       dataset.metadata[i].camera_distortion);
         }

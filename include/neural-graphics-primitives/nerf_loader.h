@@ -131,8 +131,7 @@ struct NerfDataset {
 };
 
 NerfDataset
-load_nerf(const std::vector<filesystem::path>& jsonpaths,
-          float sharpen_amount = 0.f);
+load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount = 0.f);
 NerfDataset
 create_empty_nerf_dataset(size_t n_images,
                           Eigen::Vector2i image_resolution,

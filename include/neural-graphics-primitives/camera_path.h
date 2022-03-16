@@ -37,8 +37,7 @@ struct CameraKeyframe {
     m() const {
         Eigen::Matrix<float, 3, 4> rv;
         rv.col(3) = T;
-        rv.block<3, 3>(0, 0) =
-            Eigen::Quaternionf(R).normalized().toRotationMatrix();
+        rv.block<3, 3>(0, 0) = Eigen::Quaternionf(R).normalized().toRotationMatrix();
         return rv;
     }
 
@@ -58,8 +57,7 @@ struct CameraKeyframe {
                    float fv,
                    float df)
         : R(r), T(t), slice(sl), scale(sc), fov(fv), dof(df) {}
-    CameraKeyframe(
-        Eigen::Matrix<float, 3, 4> m, float sl, float sc, float fv, float df)
+    CameraKeyframe(Eigen::Matrix<float, 3, 4> m, float sl, float sc, float fv, float df)
         : slice(sl), scale(sc), fov(fv), dof(df) {
         T = m.col(3);
         R = Eigen::Quaternionf(m.block<3, 3>(0, 0)).coeffs();
@@ -86,11 +84,7 @@ struct CameraKeyframe {
 };
 
 CameraKeyframe
-lerp(const CameraKeyframe& p0,
-     const CameraKeyframe& p1,
-     float t,
-     float t0,
-     float t1);
+lerp(const CameraKeyframe& p0, const CameraKeyframe& p1, float t, float t0, float t1);
 CameraKeyframe
 spline(float t,
        const CameraKeyframe& p0,

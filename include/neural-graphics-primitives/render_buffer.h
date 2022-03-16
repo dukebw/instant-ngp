@@ -84,8 +84,7 @@ class GLTexture : public SurfaceProvider {
     GLTexture(const GLTexture& other) = delete;
 
     GLTexture(GLTexture&& other)
-        : m_texture_name(move(other.m_texture_name)),
-          m_texture_id(other.m_texture_id) {
+        : m_texture_name(move(other.m_texture_name)), m_texture_id(other.m_texture_id) {
         other.m_texture_id = 0;
     }
 
@@ -130,9 +129,7 @@ class GLTexture : public SurfaceProvider {
     load(const uint8_t* data, Eigen::Vector2i new_size, int n_channels);
 
     void
-    resize(const Eigen::Vector2i& new_size,
-           int n_channels,
-           bool is_8bit = false);
+    resize(const Eigen::Vector2i& new_size, int n_channels, bool is_8bit = false);
 
     void
     resize(const Eigen::Vector2i& new_size) override {

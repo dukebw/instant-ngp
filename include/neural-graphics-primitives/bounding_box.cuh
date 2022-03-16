@@ -50,8 +50,7 @@ struct BoundingBox {
     BoundingBox() {}
 
     NGP_HOST_DEVICE
-    BoundingBox(const Eigen::Vector3f& a, const Eigen::Vector3f& b)
-        : min{a}, max{b} {}
+    BoundingBox(const Eigen::Vector3f& a, const Eigen::Vector3f& b) : min{a}, max{b} {}
 
     NGP_HOST_DEVICE explicit BoundingBox(const Triangle& tri) {
         min = max = tri.a;
@@ -141,8 +140,7 @@ struct BoundingBox {
         triangle.get_vertices(triangle_verts);
 
         for (int i = 0; i < 3; i++) {
-            project<3>(
-                triangle_verts, box_normals[i], triangle_min, triangle_max);
+            project<3>(triangle_verts, box_normals[i], triangle_min, triangle_max);
             if (triangle_max < min[i] || triangle_min > max[i]) {
                 return false;  // No intersection possible.
             }
@@ -181,8 +179,7 @@ struct BoundingBox {
     }
 
     NGP_HOST_DEVICE Eigen::Vector2f
-    ray_intersect(const Eigen::Vector3f& pos,
-                  const Eigen::Vector3f& dir) const {
+    ray_intersect(const Eigen::Vector3f& pos, const Eigen::Vector3f& dir) const {
         float tmin = (min.x() - pos.x()) / dir.x();
         float tmax = (max.x() - pos.x()) / dir.x();
 
@@ -283,10 +280,8 @@ struct BoundingBox {
 inline std::ostream&
 operator<<(std::ostream& os, const ngp::BoundingBox& bb) {
     os << "[";
-    os << "min=[" << bb.min.x() << "," << bb.min.y() << "," << bb.min.z()
-       << "], ";
-    os << "max=[" << bb.max.x() << "," << bb.max.y() << "," << bb.max.z()
-       << "]";
+    os << "min=[" << bb.min.x() << "," << bb.min.y() << "," << bb.min.z() << "], ";
+    os << "max=[" << bb.max.x() << "," << bb.max.y() << "," << bb.max.z() << "]";
     os << "]";
     return os;
 }

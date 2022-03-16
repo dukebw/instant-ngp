@@ -91,41 +91,38 @@ class TriangleOctree {
 
             int last_n_nodes = n_nodes;
             n_nodes = node_counter;
-            pool.parallelFor<int>(
-                last_n_nodes, node_counter, [&](size_t parent_idx) {
-                    Vector3i16 child_pos_base =
-                        m_nodes[parent_idx].pos * (uint16_t)2;
-                    float size = std::scalbnf(1.0f, -depth - 1);
+            pool.parallelFor<int>(last_n_nodes, node_counter, [&](size_t parent_idx) {
+                Vector3i16 child_pos_base = m_nodes[parent_idx].pos * (uint16_t)2;
+                float size = std::scalbnf(1.0f, -depth - 1);
 
-                    for (uint32_t i = 0; i < 8; ++i) {
-                        Vector3i16 child_pos = child_pos_base;
-                        if (i & 1) ++child_pos.x();
-                        if (i & 2) ++child_pos.y();
-                        if (i & 4) ++child_pos.z();
+                for (uint32_t i = 0; i < 8; ++i) {
+                    Vector3i16 child_pos = child_pos_base;
+                    if (i & 1) ++child_pos.x();
+                    if (i & 2) ++child_pos.y();
+                    if (i & 4) ++child_pos.z();
 
-                        BoundingBox bb = {
-                            size * child_pos.cast<float>(),
-                            size * (child_pos + Vector3i16::Constant(1))
-                                       .cast<float>()};
+                    BoundingBox bb = {
+                        size * child_pos.cast<float>(),
+                        size * (child_pos + Vector3i16::Constant(1)).cast<float>()};
 
-                        if (!bvh.touches_triangle(bb, triangles.data())) {
-                            m_nodes[parent_idx].children[i] = -1;
-                            continue;
-                        }
-
-                        int node_idx = node_counter++;
-                        m_nodes[parent_idx].children[i] = node_idx;
-
-                        // Create regular nodes one layer less deep as the dual
-                        // nodes
-                        if (depth < max_depth - 2) {
-                            m_nodes[node_idx].pos = {(uint16_t)child_pos.x(),
-                                                     (uint16_t)child_pos.y(),
-                                                     (uint16_t)child_pos.z()};
-                            m_nodes[node_idx].depth = (uint8_t)(depth + 1);
-                        }
+                    if (!bvh.touches_triangle(bb, triangles.data())) {
+                        m_nodes[parent_idx].children[i] = -1;
+                        continue;
                     }
-                });
+
+                    int node_idx = node_counter++;
+                    m_nodes[parent_idx].children[i] = node_idx;
+
+                    // Create regular nodes one layer less deep as the dual
+                    // nodes
+                    if (depth < max_depth - 2) {
+                        m_nodes[node_idx].pos = {(uint16_t)child_pos.x(),
+                                                 (uint16_t)child_pos.y(),
+                                                 (uint16_t)child_pos.z()};
+                        m_nodes[node_idx].depth = (uint8_t)(depth + 1);
+                    }
+                }
+            });
         }
 
         m_dual_nodes.resize(node_counter);
@@ -140,26 +137,25 @@ class TriangleOctree {
         std::unordered_map<Vector4i16, uint32_t> coords;
         coords.reserve(m_dual_nodes.size() * 8);
         m_n_vertices = 0;
-        auto generate_dual_coords = [&](TriangleOctreeDualNode& dual_node,
-                                        int depth,
-                                        const Vector3i16 pos) {
-            for (uint32_t i = 0; i < 8; ++i) {
-                Vector4i16 coord = {(uint16_t)pos.x(),
-                                    (uint16_t)pos.y(),
-                                    (uint16_t)pos.z(),
-                                    (uint16_t)depth};
-                if (i & 1) ++coord.x();
-                if (i & 2) ++coord.y();
-                if (i & 4) ++coord.z();
+        auto generate_dual_coords =
+            [&](TriangleOctreeDualNode& dual_node, int depth, const Vector3i16 pos) {
+                for (uint32_t i = 0; i < 8; ++i) {
+                    Vector4i16 coord = {(uint16_t)pos.x(),
+                                        (uint16_t)pos.y(),
+                                        (uint16_t)pos.z(),
+                                        (uint16_t)depth};
+                    if (i & 1) ++coord.x();
+                    if (i & 2) ++coord.y();
+                    if (i & 4) ++coord.z();
 
-                auto p = coords.insert({coord, m_n_vertices});
-                if (p.second) {
-                    ++m_n_vertices;
+                    auto p = coords.insert({coord, m_n_vertices});
+                    if (p.second) {
+                        ++m_n_vertices;
+                    }
+
+                    dual_node.vertices[i] = p.first->second;
                 }
-
-                dual_node.vertices[i] = p.first->second;
-            }
-        };
+            };
 
         generate_dual_coords(m_dual_nodes[0], 0, {0, 0, 0});
         for (auto& node : m_nodes) {
@@ -246,9 +242,7 @@ class TriangleOctree {
     }
 
     __device__ static bool
-    contains(const TriangleOctreeNode* nodes,
-             int max_depth,
-             Eigen::Vector3f pos) {
+    contains(const TriangleOctreeNode* nodes, int max_depth, Eigen::Vector3f pos) {
         const TriangleOctreeNode* node = &nodes[0];
 
         for (uint8_t depth = 0; depth < max_depth - 1; ++depth) {
@@ -317,9 +311,8 @@ class TriangleOctree {
 
                 float size = scalbnf(1.0f, -depth);
 
-                BoundingBox bb = {
-                    size * pos.cast<float>(),
-                    size * (pos + Vector3i16::Constant(1)).cast<float>()};
+                BoundingBox bb = {size * pos.cast<float>(),
+                                  size * (pos + Vector3i16::Constant(1)).cast<float>()};
                 Eigen::Vector2f t = bb.ray_intersect(ro, rd);
                 if (t.y() >= 0 && t.y() < MAX_DIST && t.x() < mint) {
                     // All children's children are gonna be leaves,

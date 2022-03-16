@@ -46,8 +46,8 @@ class ThreadPool {
 
         ++mNumTasksInSystem;
 
-        auto task = std::make_shared<std::packaged_task<return_type()>>(
-            std::forward<F>(f));
+        auto task =
+            std::make_shared<std::packaged_task<return_type()>>(std::forward<F>(f));
 
         auto res = task->get_future();
 

@@ -48,19 +48,19 @@ __raygen__rg() {
 
         // Trace the stab ray against our scene hierarchy
         unsigned int p0;
-        optixTrace(params.handle,
-                   to_float3(ray_origin),
-                   to_float3(ray_direction),
-                   0.0f,                      // Min intersection distance
-                   1e16f,                     // Max intersection distance
-                   0.0f,                      // rayTime
-                   OptixVisibilityMask(255),  // Specify always visible
-                   OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT |
-                       OPTIX_RAY_FLAG_DISABLE_ANYHIT,
-                   0,  // SBT offset
-                   1,  // SBT stride
-                   0,  // missSBTIndex
-                   p0);
+        optixTrace(
+            params.handle,
+            to_float3(ray_origin),
+            to_float3(ray_direction),
+            0.0f,                      // Min intersection distance
+            1e16f,                     // Max intersection distance
+            0.0f,                      // rayTime
+            OptixVisibilityMask(255),  // Specify always visible
+            OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT | OPTIX_RAY_FLAG_DISABLE_ANYHIT,
+            0,  // SBT offset
+            1,  // SBT stride
+            0,  // missSBTIndex
+            p0);
 
         if (p0 == 0) {
             // One ray escaped. We are outside. Distance doesn't need to be

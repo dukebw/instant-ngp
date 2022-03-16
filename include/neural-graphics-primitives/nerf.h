@@ -65,23 +65,19 @@ struct RaysNerfSoa {
 
 struct NerfPosition {
     NGP_HOST_DEVICE
-    NerfPosition(const Eigen::Vector3f& pos, float dt)
-        : p{pos} {}
+    NerfPosition(const Eigen::Vector3f& pos, float dt) : p{pos} {}
     Eigen::Vector3f p;
 };
 
 struct NerfDirection {
     NGP_HOST_DEVICE
-    NerfDirection(const Eigen::Vector3f& dir, float dt)
-        : d{dir} {}
+    NerfDirection(const Eigen::Vector3f& dir, float dt) : d{dir} {}
     Eigen::Vector3f d;
 };
 
 struct NerfCoordinate {
     NGP_HOST_DEVICE
-    NerfCoordinate(const Eigen::Vector3f& pos,
-                   const Eigen::Vector3f& dir,
-                   float dt)
+    NerfCoordinate(const Eigen::Vector3f& pos, const Eigen::Vector3f& dir, float dt)
         : pos{pos, dt}, dt{dt}, dir{dir, dt} {}
     NGP_HOST_DEVICE void
     set_with_optional_light_dir(const Eigen::Vector3f& pos,
@@ -92,17 +88,14 @@ struct NerfCoordinate {
         this->dt = dt;
         this->pos = NerfPosition(pos, dt);
         this->dir = NerfDirection(dir, dt);
-        if (stride_in_bytes >=
-            sizeof(Eigen::Vector3f) + sizeof(NerfCoordinate)) {
+        if (stride_in_bytes >= sizeof(Eigen::Vector3f) + sizeof(NerfCoordinate)) {
             *(Eigen::Vector3f*)(this + 1) = light_dir;
         }
     }
     NGP_HOST_DEVICE void
-    copy_with_optional_light_dir(const NerfCoordinate& inp,
-                                 uint32_t stride_in_bytes) {
+    copy_with_optional_light_dir(const NerfCoordinate& inp, uint32_t stride_in_bytes) {
         *this = inp;
-        if (stride_in_bytes >=
-            sizeof(Eigen::Vector3f) + sizeof(NerfCoordinate)) {
+        if (stride_in_bytes >= sizeof(Eigen::Vector3f) + sizeof(NerfCoordinate)) {
             *(Eigen::Vector3f*)(this + 1) = *(Eigen::Vector3f*)(&inp + 1);
         }
     }

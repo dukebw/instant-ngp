@@ -86,8 +86,7 @@ class TriangleBvh {
     virtual void
     build(std::vector<Triangle>& triangles, uint32_t n_primitives_per_leaf) = 0;
     virtual void
-    build_optix(const tcnn::GPUMemory<Triangle>& triangles,
-                cudaStream_t stream) = 0;
+    build_optix(const tcnn::GPUMemory<Triangle>& triangles, cudaStream_t stream) = 0;
 
     static std::unique_ptr<TriangleBvh>
     make();

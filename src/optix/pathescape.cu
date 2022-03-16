@@ -100,10 +100,9 @@ __raygen__rg() {
             }
 
             Vector3f N_0;
-            float t = params.triangles[p0].ray_intersect(
-                ray_origin, ray_direction, N_0);
-            const Vector3f N =
-                faceforward(N_0, -ray_direction, N_0).normalized();
+            float t =
+                params.triangles[p0].ray_intersect(ray_origin, ray_direction, N_0);
+            const Vector3f N = faceforward(N_0, -ray_direction, N_0).normalized();
 
             // Prevent self-intersections by subtracting 1e-3f from the target
             // distance.

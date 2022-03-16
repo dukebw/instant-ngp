@@ -90,16 +90,13 @@ struct Triangle {
                 ?
                 // 3 edges
                 std::min({
-                    (v21 * tcnn::clamp(
-                               v21.dot(p1) / v21.squaredNorm(), 0.0f, 1.0f) -
+                    (v21 * tcnn::clamp(v21.dot(p1) / v21.squaredNorm(), 0.0f, 1.0f) -
                      p1)
                         .squaredNorm(),
-                    (v32 * tcnn::clamp(
-                               v32.dot(p2) / v32.squaredNorm(), 0.0f, 1.0f) -
+                    (v32 * tcnn::clamp(v32.dot(p2) / v32.squaredNorm(), 0.0f, 1.0f) -
                      p2)
                         .squaredNorm(),
-                    (v13 * tcnn::clamp(
-                               v13.dot(p3) / v13.squaredNorm(), 0.0f, 1.0f) -
+                    (v13 * tcnn::clamp(v13.dot(p3) / v13.squaredNorm(), 0.0f, 1.0f) -
                      p3)
                         .squaredNorm(),
                 })
@@ -199,12 +196,12 @@ struct Triangle {
 inline std::ostream&
 operator<<(std::ostream& os, const ngp::Triangle& triangle) {
     os << "[";
-    os << "a=[" << triangle.a.x() << "," << triangle.a.y() << ","
-       << triangle.a.z() << "], ";
-    os << "b=[" << triangle.b.x() << "," << triangle.b.y() << ","
-       << triangle.b.z() << "], ";
-    os << "c=[" << triangle.c.x() << "," << triangle.c.y() << ","
-       << triangle.c.z() << "]";
+    os << "a=[" << triangle.a.x() << "," << triangle.a.y() << "," << triangle.a.z()
+       << "], ";
+    os << "b=[" << triangle.b.x() << "," << triangle.b.y() << "," << triangle.b.z()
+       << "], ";
+    os << "c=[" << triangle.c.x() << "," << triangle.c.y() << "," << triangle.c.z()
+       << "]";
     os << "]";
     return os;
 }

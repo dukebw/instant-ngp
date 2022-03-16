@@ -84,16 +84,14 @@ class Testbed {
     void
     clear_training_data();
 
-    using distance_fun_t =
-        std::function<void(uint32_t,
-                           const tcnn::GPUMemory<Eigen::Vector3f>&,
-                           tcnn::GPUMemory<float>&,
-                           cudaStream_t)>;
-    using normals_fun_t =
-        std::function<void(uint32_t,
-                           const tcnn::GPUMemory<Eigen::Vector3f>&,
-                           tcnn::GPUMemory<Eigen::Vector3f>&,
-                           cudaStream_t)>;
+    using distance_fun_t = std::function<void(uint32_t,
+                                              const tcnn::GPUMemory<Eigen::Vector3f>&,
+                                              tcnn::GPUMemory<float>&,
+                                              cudaStream_t)>;
+    using normals_fun_t = std::function<void(uint32_t,
+                                             const tcnn::GPUMemory<Eigen::Vector3f>&,
+                                             tcnn::GPUMemory<Eigen::Vector3f>&,
+                                             cudaStream_t)>;
 
     class SphereTracer {
        public:
@@ -121,9 +119,7 @@ class Testbed {
                             const RaysSdfSoa& data,
                             cudaStream_t stream);
         uint32_t
-        trace_bvh(TriangleBvh* bvh,
-                  const Triangle* triangles,
-                  cudaStream_t stream);
+        trace_bvh(TriangleBvh* bvh, const Triangle* triangles, cudaStream_t stream);
         uint32_t
         trace(const distance_fun_t& distance_function,
               float zero_offset,
@@ -284,8 +280,7 @@ class Testbed {
         }
         float
         variance() {
-            return count ? (xsquared - (x * x) / (float)count) / (float)count
-                         : 0.f;
+            return count ? (xsquared - (x * x) / (float)count) / (float)count : 0.f;
         }
         float
         sigma() {
@@ -516,9 +511,7 @@ class Testbed {
     tcnn::GPUMemory<Eigen::Array4f>
     get_rgba_on_grid(Eigen::Vector3i res3d, Eigen::Vector3f ray_dir);
     int
-    marching_cubes(Eigen::Vector3i res3d,
-                   const BoundingBox& aabb,
-                   float thresh);
+    marching_cubes(Eigen::Vector3i res3d, const BoundingBox& aabb, float thresh);
 
     // Determines the 3d focus point by rendering a little 16x16 depth image
     // around the mouse cursor and picking the median depth.
@@ -535,11 +528,10 @@ class Testbed {
 
 #ifdef NGP_PYTHON
     pybind11::dict
-    compute_marching_cubes_mesh(
-        Eigen::Vector3i res3d = Eigen::Vector3i::Constant(128),
-        BoundingBox aabb = BoundingBox{Eigen::Vector3f::Zero(),
-                                       Eigen::Vector3f::Ones()},
-        float thresh = 2.5f);
+    compute_marching_cubes_mesh(Eigen::Vector3i res3d = Eigen::Vector3i::Constant(128),
+                                BoundingBox aabb = BoundingBox{Eigen::Vector3f::Zero(),
+                                                               Eigen::Vector3f::Ones()},
+                                float thresh = 2.5f);
     pybind11::array_t<float>
     render_to_cpu(int width,
                   int height,
@@ -613,8 +605,7 @@ class Testbed {
     void
     set_fov_xy(const Eigen::Vector2f& val);
     void
-    save_snapshot(const std::string& filepath_string,
-                  bool include_optimizer_state);
+    save_snapshot(const std::string& filepath_string, bool include_optimizer_state);
     void
     load_snapshot(const std::string& filepath_string);
     CameraKeyframe
@@ -700,8 +691,7 @@ class Testbed {
         Eigen::Vector2f::Constant(0.5f);  // center of 2d zoom
 
     Eigen::Matrix<float, 3, 4> m_camera = Eigen::Matrix<float, 3, 4>::Zero();
-    Eigen::Matrix<float, 3, 4> m_smoothed_camera =
-        Eigen::Matrix<float, 3, 4>::Zero();
+    Eigen::Matrix<float, 3, 4> m_smoothed_camera = Eigen::Matrix<float, 3, 4>::Zero();
     bool m_fps_camera = false;
     bool m_camera_smoothing = false;
     bool m_autofocus = false;
@@ -734,12 +724,10 @@ class Testbed {
         struct Training {
             NerfDataset dataset;
             Eigen::Vector2i image_resolution;
-            int n_images_for_training =
-                0;  // how many images to train from, as a high watermark
-                    // compared to the dataset size
-            int n_images_for_training_prev =
-                0;  // how many images we saw last time we updated the density
-                    // grid
+            int n_images_for_training = 0;  // how many images to train from, as a high
+                                            // watermark compared to the dataset size
+            int n_images_for_training_prev = 0;  // how many images we saw last time we
+                                                 // updated the density grid
 
             struct ErrorMap {
                 tcnn::GPUMemory<float> data;
@@ -843,9 +831,8 @@ class Testbed {
                                   float p1 = 0.0f,
                                   float p2 = 0.0f);
             void
-            set_camera_extrinsics(
-                int frame_idx,
-                const Eigen::Matrix<float, 3, 4>& camera_to_world);
+            set_camera_extrinsics(int frame_idx,
+                                  const Eigen::Matrix<float, 3, 4>& camera_to_world);
             Eigen::Matrix<float, 3, 4>
             get_camera_extrinsics(int frame_idx);
             void
@@ -863,9 +850,8 @@ class Testbed {
 
         } training = {};
 
-        tcnn::GPUMemory<float>
-            density_grid;  // NERF_GRIDSIZE()^3 grid of EMA smoothed densities
-                           // from the network
+        tcnn::GPUMemory<float> density_grid;  // NERF_GRIDSIZE()^3 grid of EMA smoothed
+                                              // densities from the network
         tcnn::GPUMemory<uint8_t> density_grid_bitfield;
         uint8_t*
         get_density_grid_bitfield_mip(uint32_t mip);
@@ -921,9 +907,8 @@ class Testbed {
 
         bool uses_takikawa_encoding = false;
         bool use_triangle_octree = false;
-        int octree_depth_target =
-            0;  // we duplicate this state so that you can waggle the slider
-                // without triggering it immediately
+        int octree_depth_target = 0;  // we duplicate this state so that you can waggle
+                                      // the slider without triggering it immediately
         std::shared_ptr<TriangleOctree> triangle_octree;
 
         bool analytic_normals = false;
@@ -1069,8 +1054,7 @@ class Testbed {
 
     default_rng_t m_rng;
 
-    CudaRenderBuffer m_windowless_render_surface{
-        std::make_shared<CudaSurface2D>()};
+    CudaRenderBuffer m_windowless_render_surface{std::make_shared<CudaSurface2D>()};
 
     uint32_t
     network_width(uint32_t layer) const;

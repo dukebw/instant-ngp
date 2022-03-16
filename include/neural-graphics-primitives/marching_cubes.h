@@ -38,18 +38,17 @@ compute_mesh_1ring(const tcnn::GPUMemory<Eigen::Vector3f>& verts,
                    tcnn::GPUMemory<Eigen::Vector3f>& output_normals);
 
 void
-compute_mesh_opt_gradients(
-    float thresh,
-    const tcnn::GPUMemory<Eigen::Vector3f>& verts,
-    const tcnn::GPUMemory<Eigen::Vector3f>& vert_normals,
-    const tcnn::GPUMemory<Eigen::Vector4f>& verts_smoothed,
-    const tcnn::network_precision_t* densities,
-    uint32_t input_gradient_width,
-    const float* input_gradients,
-    tcnn::GPUMemory<Eigen::Vector3f>& verts_gradient_out,
-    float k_smooth_amount,
-    float k_density_amount,
-    float k_inflate_amount);
+compute_mesh_opt_gradients(float thresh,
+                           const tcnn::GPUMemory<Eigen::Vector3f>& verts,
+                           const tcnn::GPUMemory<Eigen::Vector3f>& vert_normals,
+                           const tcnn::GPUMemory<Eigen::Vector4f>& verts_smoothed,
+                           const tcnn::network_precision_t* densities,
+                           uint32_t input_gradient_width,
+                           const float* input_gradients,
+                           tcnn::GPUMemory<Eigen::Vector3f>& verts_gradient_out,
+                           float k_smooth_amount,
+                           float k_density_amount,
+                           float k_inflate_amount);
 
 void
 save_mesh(tcnn::GPUMemory<Eigen::Vector3f>& verts,

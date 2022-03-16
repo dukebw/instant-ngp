@@ -52,9 +52,7 @@ kernel_takikawa(const uint32_t num_elements,
             data_in(i)[1],
             data_in(i)[2],
         },
-        [&](const TriangleOctreeDualNode& node,
-            uint32_t level,
-            Eigen::Vector3f pos) {
+        [&](const TriangleOctreeDualNode& node, uint32_t level, Eigen::Vector3f pos) {
             if (level < starting_level) {
                 return;
             }
@@ -93,9 +91,8 @@ kernel_takikawa(const uint32_t num_elements,
                     }
 
                     int param_idx = node.vertices[idx] * N_FEATURES_PER_LEVEL;
-                    auto val = *(
-                        tcnn::vector_t<T,
-                                       N_FEATURES_PER_LEVEL>*)&grid[param_idx];
+                    auto val =
+                        *(tcnn::vector_t<T, N_FEATURES_PER_LEVEL>*)&grid[param_idx];
 
 // Read params
 #pragma unroll
@@ -138,22 +135,17 @@ kernel_takikawa(const uint32_t num_elements,
                             }
                         }
 
-                        int param_idx =
-                            node.vertices[child_idx] * N_FEATURES_PER_LEVEL;
+                        int param_idx = node.vertices[child_idx] * N_FEATURES_PER_LEVEL;
                         auto val_left =
-                            *(tcnn::vector_t<T, N_FEATURES_PER_LEVEL>*)&grid
-                                [param_idx];
+                            *(tcnn::vector_t<T, N_FEATURES_PER_LEVEL>*)&grid[param_idx];
 
                         child_idx |= 1 << grad_dim;
-                        param_idx =
-                            node.vertices[child_idx] * N_FEATURES_PER_LEVEL;
+                        param_idx = node.vertices[child_idx] * N_FEATURES_PER_LEVEL;
                         auto val_right =
-                            *(tcnn::vector_t<T, N_FEATURES_PER_LEVEL>*)&grid
-                                [param_idx];
+                            *(tcnn::vector_t<T, N_FEATURES_PER_LEVEL>*)&grid[param_idx];
 
 #pragma unroll
-                        for (uint32_t feature = 0;
-                             feature < N_FEATURES_PER_LEVEL;
+                        for (uint32_t feature = 0; feature < N_FEATURES_PER_LEVEL;
                              ++feature) {
                             ((float*)&grad)[feature] +=
                                 weight *
@@ -200,8 +192,8 @@ kernel_takikawa_backward_input(const uint32_t num_elements,
 
     float result = 0;
     for (int k = 0; k < num_grid_features; ++k) {
-        result += (float)dL_dy(i)[k] *
-                  dy_dx[i * fan_out_grad + j * num_grid_features + k];
+        result +=
+            (float)dL_dy(i)[k] * dy_dx[i * fan_out_grad + j * num_grid_features + k];
     }
     dL_dx(i)[j] = result;
 }
@@ -230,9 +222,7 @@ kernel_takikawa_backward(const uint32_t num_elements,
             data_in(i)[1],
             data_in(i)[2],
         },
-        [&](const TriangleOctreeDualNode& node,
-            uint32_t level,
-            Eigen::Vector3f pos) {
+        [&](const TriangleOctreeDualNode& node, uint32_t level, Eigen::Vector3f pos) {
             if (level < starting_level) {
                 return;
             }
@@ -268,16 +258,13 @@ kernel_takikawa_backward(const uint32_t num_elements,
 #if defined(__CUDA_ARCH__) && \
     __CUDA_ARCH__ >= 600  // atomicAdd(__half2) is only supported with compute
                           // capability 60 and above
-                if (N_FEATURES_PER_LEVEL > 1 &&
-                    std::is_same<GRAD_T, __half>::value) {
+                if (N_FEATURES_PER_LEVEL > 1 && std::is_same<GRAD_T, __half>::value) {
 #pragma unroll
                     for (uint32_t feature = 0; feature < N_FEATURES_PER_LEVEL;
                          feature += 2) {
-                        __half2 v = {
-                            (__half)((float)grad[feature] * weight),
-                            (__half)((float)grad[feature + 1] * weight)};
-                        atomicAdd(
-                            (__half2*)&params_gradient[param_idx + feature], v);
+                        __half2 v = {(__half)((float)grad[feature] * weight),
+                                     (__half)((float)grad[feature + 1] * weight)};
+                        atomicAdd((__half2*)&params_gradient[param_idx + feature], v);
                     }
                 } else
 #endif
@@ -322,12 +309,10 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
           m_octree{octree},
           m_interpolation_type{interpolation_type} {
         if (m_starting_level >= m_octree->depth()) {
-            throw std::runtime_error{
-                "Starting level must be below octree depth."};
+            throw std::runtime_error{"Starting level must be below octree depth."};
         }
 
-        m_n_padded_output_dims = m_n_output_dims =
-            N_FEATURES_PER_LEVEL * n_levels();
+        m_n_padded_output_dims = m_n_output_dims = N_FEATURES_PER_LEVEL * n_levels();
 
         if (N_FEATURES_PER_LEVEL != 1 && N_FEATURES_PER_LEVEL != 2 &&
             N_FEATURES_PER_LEVEL != 4 && N_FEATURES_PER_LEVEL != 8) {
@@ -352,8 +337,7 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
             bool prepare_input_gradients = false) override {
         auto forward = std::make_unique<ForwardContext>();
 
-        if ((!output && !prepare_input_gradients) ||
-            m_n_padded_output_dims == 0) {
+        if ((!output && !prepare_input_gradients) || m_n_padded_output_dims == 0) {
             return forward;
         }
 
@@ -362,20 +346,19 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
                 3 * N_FEATURES_PER_LEVEL * n_levels(), input.n(), stream};
         }
 
-        tcnn::linear_kernel(
-            kernel_takikawa<T, N_FEATURES_PER_LEVEL>,
-            0,
-            stream,
-            input.n(),
-            n_levels(),
-            m_starting_level,
-            m_interpolation_type,
-            m_octree->nodes_gpu(),
-            m_octree->dual_nodes_gpu(),
-            use_inference_params ? m_params_inference : m_params,
-            input.pitched_ptr(),
-            output ? output->pitched_ptr() : tcnn::PitchedPtr<T>{},
-            forward->dy_dx.data());
+        tcnn::linear_kernel(kernel_takikawa<T, N_FEATURES_PER_LEVEL>,
+                            0,
+                            stream,
+                            input.n(),
+                            n_levels(),
+                            m_starting_level,
+                            m_interpolation_type,
+                            m_octree->nodes_gpu(),
+                            m_octree->dual_nodes_gpu(),
+                            use_inference_params ? m_params_inference : m_params,
+                            input.pitched_ptr(),
+                            output ? output->pitched_ptr() : tcnn::PitchedPtr<T>{},
+                            forward->dy_dx.data());
 
         return forward;
     }
@@ -431,10 +414,8 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
                 parallel_for_gpu(
                     stream,
                     n_params(),
-                    [grad = m_params_gradient,
-                     grad_tmp = params_gradient] __device__(size_t i) {
-                        grad[i] = (T)grad_tmp[i];
-                    });
+                    [grad = m_params_gradient, grad_tmp = params_gradient] __device__(
+                        size_t i) { grad[i] = (T)grad_tmp[i]; });
             }
         }
 
@@ -473,8 +454,7 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
 
     void
     set_alignment(uint32_t alignment) override {
-        if (m_n_output_dims !=
-            tcnn::next_multiple(m_n_output_dims, alignment)) {
+        if (m_n_output_dims != tcnn::next_multiple(m_n_output_dims, alignment)) {
             throw std::runtime_error{
                 std::string{"TakikawaEncoding only supports number of output "
                             "dims that divide into "} +

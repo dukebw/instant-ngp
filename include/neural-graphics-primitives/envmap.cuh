@@ -33,9 +33,8 @@ read_envmap(const T* __restrict__ envmap_data,
             const Eigen::Vector3f& dir) {
     auto dir_cyl = dir_to_spherical_unorm({dir.z(), -dir.x(), dir.y()});
 
-    auto envmap_float =
-        Eigen::Vector2f{dir_cyl.y() * (envmap_resolution.x() - 1),
-                        dir_cyl.x() * (envmap_resolution.y() - 1)};
+    auto envmap_float = Eigen::Vector2f{dir_cyl.y() * (envmap_resolution.x() - 1),
+                                        dir_cyl.x() * (envmap_resolution.y() - 1)};
     Eigen::Vector2i envmap_texel = envmap_float.cast<int>();
 
     auto weight = envmap_float - envmap_texel.cast<float>();
@@ -50,13 +49,13 @@ read_envmap(const T* __restrict__ envmap_data,
 
         Eigen::Array4f result;
         if (std::is_same<T, float>::value) {
-            result = *(Eigen::Array4f*)&envmap_data
-                         [(pos.x() + pos.y() * envmap_resolution.x()) * 4];
+            result = *(Eigen::Array4f*)&envmap_data[(pos.x() +
+                                                     pos.y() * envmap_resolution.x()) *
+                                                    4];
         } else {
             auto val = *(tcnn::vector_t<T, 4>*)&envmap_data
                            [(pos.x() + pos.y() * envmap_resolution.x()) * 4];
-            result = {
-                (float)val[0], (float)val[1], (float)val[2], (float)val[3]};
+            result = {(float)val[0], (float)val[1], (float)val[2], (float)val[3]};
         }
         return result;
     };
@@ -81,9 +80,8 @@ deposit_envmap_gradient(const tcnn::vector_t<T, 4>& value,
                         const Eigen::Vector3f& dir) {
     auto dir_cyl = dir_to_spherical_unorm({dir.z(), -dir.x(), dir.y()});
 
-    auto envmap_float =
-        Eigen::Vector2f{dir_cyl.y() * (envmap_resolution.x() - 1),
-                        dir_cyl.x() * (envmap_resolution.y() - 1)};
+    auto envmap_float = Eigen::Vector2f{dir_cyl.y() * (envmap_resolution.x() - 1),
+                                        dir_cyl.x() * (envmap_resolution.y() - 1)};
     Eigen::Vector2i envmap_texel = envmap_float.cast<int>();
 
     auto weight = envmap_float - envmap_texel.cast<float>();
@@ -105,18 +103,17 @@ deposit_envmap_gradient(const tcnn::vector_t<T, 4>& value,
                           // capability 60 and above
         if (std::is_same<GRAD_T, __half>::value) {
             for (uint32_t c = 0; c < 4; c += 2) {
-                atomicAdd(
-                    (__half2*)&envmap_gradient
-                        [(pos.x() + pos.y() * envmap_resolution.x()) * 4 + c],
-                    {value[c] * weight, value[c + 1] * weight});
+                atomicAdd((__half2*)&envmap_gradient
+                              [(pos.x() + pos.y() * envmap_resolution.x()) * 4 + c],
+                          {value[c] * weight, value[c + 1] * weight});
             }
         } else
 #endif
         {
             for (uint32_t c = 0; c < 4; ++c) {
                 atomicAdd(
-                    &envmap_gradient
-                        [(pos.x() + pos.y() * envmap_resolution.x()) * 4 + c],
+                    &envmap_gradient[(pos.x() + pos.y() * envmap_resolution.x()) * 4 +
+                                     c],
                     (GRAD_T)(value[c] * weight));
             }
         }

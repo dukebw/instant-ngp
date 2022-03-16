@@ -30,9 +30,6 @@ save_exr(const float* data,
 void
 load_exr(float** data, int* width, int* height, const char* filename);
 __half*
-load_exr_to_gpu(int* width,
-                int* height,
-                const char* filename,
-                bool fix_premult);
+load_exr_to_gpu(int* width, int* height, const char* filename, bool fix_premult);
 
 NGP_NAMESPACE_END
