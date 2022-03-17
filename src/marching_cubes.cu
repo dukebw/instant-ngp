@@ -84,8 +84,7 @@ check_shader(GLuint handle, const char* desc, bool program) {
 
 static GLuint
 compile_shader(bool pixel, const char* code) {
-    GLuint g_VertHandle =
-        glCreateShader(pixel ? GL_FRAGMENT_SHADER : GL_VERTEX_SHADER);
+    GLuint g_VertHandle = glCreateShader(pixel ? GL_FRAGMENT_SHADER : GL_VERTEX_SHADER);
     const char* glsl_version = "#version 330";
     const GLchar* strings[2] = {glsl_version, code};
     glShaderSource(g_VertHandle, 2, strings, NULL);
@@ -125,10 +124,8 @@ draw_mesh_gl(const GPUMemory<Vector3f>& verts,
             glGenBuffers(1, &VBO[i]);
             vbosize = verts.size();
             glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
-            glBufferData(GL_ARRAY_BUFFER,
-                         vbosize * sizeof(Vector3f),
-                         NULL,
-                         GL_DYNAMIC_COPY);
+            glBufferData(
+                GL_ARRAY_BUFFER, vbosize * sizeof(Vector3f), NULL, GL_DYNAMIC_COPY);
             cudaGLRegisterBufferObject(VBO[i]);
         }
     }
@@ -140,31 +137,23 @@ draw_mesh_gl(const GPUMemory<Vector3f>& verts,
         glGenBuffers(1, &els);
         elssize = indices.size();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, els);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     elssize * sizeof(int),
-                     NULL,
-                     GL_STREAM_DRAW);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER, elssize * sizeof(int), NULL, GL_STREAM_DRAW);
         cudaGLRegisterBufferObject(els);
     }
     void* ptr = nullptr;
     cudaGLMapBufferObject(&ptr, VBO[0]);
     if (ptr)
-        cudaMemcpy(ptr,
-                   verts.data(),
-                   vbosize * sizeof(Vector3f),
-                   cudaMemcpyDeviceToDevice);
+        cudaMemcpy(
+            ptr, verts.data(), vbosize * sizeof(Vector3f), cudaMemcpyDeviceToDevice);
     cudaGLMapBufferObject(&ptr, VBO[1]);
     if (ptr)
-        cudaMemcpy(ptr,
-                   normals.data(),
-                   vbosize * sizeof(Vector3f),
-                   cudaMemcpyDeviceToDevice);
+        cudaMemcpy(
+            ptr, normals.data(), vbosize * sizeof(Vector3f), cudaMemcpyDeviceToDevice);
     cudaGLMapBufferObject(&ptr, VBO[2]);
     if (ptr)
-        cudaMemcpy(ptr,
-                   colors.data(),
-                   vbosize * sizeof(Vector3f),
-                   cudaMemcpyDeviceToDevice);
+        cudaMemcpy(
+            ptr, colors.data(), vbosize * sizeof(Vector3f), cudaMemcpyDeviceToDevice);
 
     // std::vector<Vector3f> cpucols; cpucols.resize(verts.size());
     // colors.copy_to_host(cpucols);
@@ -174,8 +163,7 @@ draw_mesh_gl(const GPUMemory<Vector3f>& verts,
     cudaGLUnmapBufferObject(VBO[0]);
     cudaGLMapBufferObject(&ptr, els);
     if (ptr)
-        cudaMemcpy(
-            ptr, indices.data(), indices.get_bytes(), cudaMemcpyDeviceToDevice);
+        cudaMemcpy(ptr, indices.data(), indices.get_bytes(), cudaMemcpyDeviceToDevice);
     cudaGLUnmapBufferObject(els);
 
     if (!program) {
@@ -230,17 +218,12 @@ void main() {
     Matrix4f world2view = view2world.inverse();
     glBindVertexArray(VAO);
     glUseProgram(program);
-    glUniformMatrix4fv(glGetUniformLocation(program, "camera"),
-                       1,
-                       GL_FALSE,
-                       (GLfloat*)&world2view);
+    glUniformMatrix4fv(
+        glGetUniformLocation(program, "camera"), 1, GL_FALSE, (GLfloat*)&world2view);
+    glUniform2f(glGetUniformLocation(program, "f"), focal_length.x(), focal_length.y());
     glUniform2f(
-        glGetUniformLocation(program, "f"), focal_length.x(), focal_length.y());
-    glUniform2f(glGetUniformLocation(program, "cen"),
-                screen_center.x(),
-                screen_center.y());
-    glUniform2i(
-        glGetUniformLocation(program, "res"), resolution.x(), resolution.y());
+        glGetUniformLocation(program, "cen"), screen_center.x(), screen_center.y());
+    glUniform2i(glGetUniformLocation(program, "res"), resolution.x(), resolution.y());
     glUniform1i(glGetUniformLocation(program, "mode"), mesh_render_mode);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, els);
     GLuint posat = (GLuint)glGetAttribLocation(program, "pos");
@@ -258,8 +241,7 @@ void main() {
     glCullFace(GL_BACK);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glDrawElements(
-        GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+    glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
     glDisable(GL_CULL_FACE);
 
     glUseProgram(0);
@@ -309,8 +291,7 @@ gen_vertices(BoundingBox aabb,
                 float prevf = f0, nextf = f1;
                 float dt = ((thresh - prevf) / (nextf - prevf));
                 verts_out[vidx] =
-                    Vector3f{float(x) + dt, float(y), float(z)}.cwiseProduct(
-                        scale) +
+                    Vector3f{float(x) + dt, float(y), float(z)}.cwiseProduct(scale) +
                     offset;
             }
         }
@@ -324,8 +305,7 @@ gen_vertices(BoundingBox aabb,
                 float prevf = f0, nextf = f1;
                 float dt = ((thresh - prevf) / (nextf - prevf));
                 verts_out[vidx] =
-                    Vector3f{float(x), float(y) + dt, float(z)}.cwiseProduct(
-                        scale) +
+                    Vector3f{float(x), float(y) + dt, float(z)}.cwiseProduct(scale) +
                     offset;
             }
         }
@@ -339,8 +319,7 @@ gen_vertices(BoundingBox aabb,
                 float prevf = f0, nextf = f1;
                 float dt = ((thresh - prevf) / (nextf - prevf));
                 verts_out[vidx] =
-                    Vector3f{float(x), float(y), float(z) + dt}.cwiseProduct(
-                        scale) +
+                    Vector3f{float(x), float(y), float(z) + dt}.cwiseProduct(scale) +
                     offset;
             }
         }
@@ -376,8 +355,8 @@ accumulate_1ring(uint32_t num_tris,
     atomicAdd(&verts_out[ic][3], 2.f);
 
     if (normals_out) {
-        Vector3f n = (pb - pa).cross(
-            pa - pc);  // don't normalise so it's weighted by area
+        Vector3f n =
+            (pb - pa).cross(pa - pc);  // don't normalise so it's weighted by area
         atomicAdd(&normals_out[ia][0], n.x());
         atomicAdd(&normals_out[ia][1], n.y());
         atomicAdd(&normals_out[ia][2], n.z());
@@ -705,8 +684,7 @@ gen_faces(Vector3i res_3d,
     uint32_t x = blockIdx.x * blockDim.x + threadIdx.x;
     uint32_t y = blockIdx.y * blockDim.y + threadIdx.y;
     uint32_t z = blockIdx.z * blockDim.z + threadIdx.z;
-    if (x >= res_3d.x() - 1 || y >= res_3d.y() - 1 || z >= res_3d.z() - 1)
-        return;
+    if (x >= res_3d.x() - 1 || y >= res_3d.y() - 1 || z >= res_3d.z() - 1) return;
     uint32_t res1 = res_3d.x();
     uint32_t res2 = res_3d.x() * res_3d.y();
     uint32_t res3 = res_3d.x() * res_3d.y() * res_3d.z();
@@ -769,13 +747,12 @@ gen_faces(Vector3i res_3d,
 }
 
 void
-compute_mesh_1ring(
-    const tcnn::GPUMemory<Vector3f>& verts,
-    const tcnn::GPUMemory<uint32_t>& indices,
-    tcnn::GPUMemory<Vector4f>& output_pos,
-    tcnn::GPUMemory<Vector3f>&
-        output_normals) {  // computes the average of the 1ring of all verts, as
-                           // homogenous coordinates
+compute_mesh_1ring(const tcnn::GPUMemory<Vector3f>& verts,
+                   const tcnn::GPUMemory<uint32_t>& indices,
+                   tcnn::GPUMemory<Vector4f>& output_pos,
+                   tcnn::GPUMemory<Vector3f>&
+                       output_normals) {  // computes the average of the 1ring of all
+                                          // verts, as homogenous coordinates
     output_pos.resize(verts.size());
     output_pos.memset(0);
     output_normals.resize(verts.size());
@@ -868,8 +845,7 @@ marching_cubes_gpu(cudaStream_t stream,
     counters.enlarge(4);
     counters.memset(0);
 
-    size_t n_bytes =
-        res_3d.x() * (size_t)res_3d.y() * res_3d.z() * 3 * sizeof(int);
+    size_t n_bytes = res_3d.x() * (size_t)res_3d.y() * res_3d.z() * 3 * sizeof(int);
     auto workspace = allocate_workspace(stream, n_bytes);
     CUDA_CHECK_THROW(cudaMemsetAsync(workspace.data(), -1, n_bytes, stream));
 
@@ -880,13 +856,8 @@ marching_cubes_gpu(cudaStream_t stream,
                          div_round_up((uint32_t)res_3d.y(), threads.y),
                          div_round_up((uint32_t)res_3d.z(), threads.z)};
     // count only
-    gen_vertices<<<blocks, threads, 0>>>(aabb,
-                                         res_3d,
-                                         density.data(),
-                                         nullptr,
-                                         nullptr,
-                                         thresh,
-                                         counters.data());
+    gen_vertices<<<blocks, threads, 0>>>(
+        aabb, res_3d, density.data(), nullptr, nullptr, thresh, counters.data());
     gen_faces<<<blocks, threads, 0>>>(
         res_3d, density.data(), nullptr, nullptr, thresh, counters.data());
     std::vector<uint32_t> cpucounters;
@@ -895,8 +866,7 @@ marching_cubes_gpu(cudaStream_t stream,
     tlog::info() << "#vertices=" << cpucounters[0]
                  << " #triangles=" << (cpucounters[1] / 3);
 
-    uint32_t n_verts =
-        (cpucounters[0] + 127) & ~127;  // round for later nn stuff
+    uint32_t n_verts = (cpucounters[0] + 127) & ~127;  // round for later nn stuff
     verts_out.resize(n_verts);
     verts_out.memset(0);
     indices_out.resize(cpucounters[1]);
@@ -967,12 +937,11 @@ save_mesh(GPUMemory<Vector3f>& verts,
                 tex[x * 3 + y * 3 * texw + 2] = b;
             }
         }
-        stbi_write_tga(
-            fs::path(outputname).with_extension(".tga").str().c_str(),
-            texw,
-            texh,
-            3,
-            tex);
+        stbi_write_tga(fs::path(outputname).with_extension(".tga").str().c_str(),
+                       texw,
+                       texh,
+                       3,
+                       tex);
         free(tex);
     }
 
@@ -1148,34 +1117,27 @@ save_density_grid_to_png(const GPUMemory<float>& density,
                     num_voxels++;
                 }
 
-                bool mysign =
-                    density_cpu[(x + 0) + (y + 0) * res3d.x() +
-                                (z + 0) * res3d.x() * res3d.z()] < thresh;
+                bool mysign = density_cpu[(x + 0) + (y + 0) * res3d.x() +
+                                          (z + 0) * res3d.x() * res3d.z()] < thresh;
                 bool near_zero_crossing = false;
                 near_zero_crossing |=
                     (density_cpu[(x + 1) + (y + 0) * res3d.x() +
-                                 (z + 0) * res3d.x() * res3d.z()] < thresh) !=
-                    mysign;
+                                 (z + 0) * res3d.x() * res3d.z()] < thresh) != mysign;
                 near_zero_crossing |=
                     (density_cpu[(x - 1) + (y + 0) * res3d.x() +
-                                 (z + 0) * res3d.x() * res3d.z()] < thresh) !=
-                    mysign;
+                                 (z + 0) * res3d.x() * res3d.z()] < thresh) != mysign;
                 near_zero_crossing |=
                     (density_cpu[(x + 0) + (y + 1) * res3d.x() +
-                                 (z + 0) * res3d.x() * res3d.z()] < thresh) !=
-                    mysign;
+                                 (z + 0) * res3d.x() * res3d.z()] < thresh) != mysign;
                 near_zero_crossing |=
                     (density_cpu[(x + 0) + (y - 1) * res3d.x() +
-                                 (z + 0) * res3d.x() * res3d.z()] < thresh) !=
-                    mysign;
+                                 (z + 0) * res3d.x() * res3d.z()] < thresh) != mysign;
                 near_zero_crossing |=
                     (density_cpu[(x + 0) + (y + 0) * res3d.x() +
-                                 (z + 1) * res3d.x() * res3d.z()] < thresh) !=
-                    mysign;
+                                 (z + 1) * res3d.x() * res3d.z()] < thresh) != mysign;
                 near_zero_crossing |=
                     (density_cpu[(x + 0) + (y + 0) * res3d.x() +
-                                 (z - 1) * res3d.x() * res3d.z()] < thresh) !=
-                    mysign;
+                                 (z - 1) * res3d.x() * res3d.z()] < thresh) != mysign;
                 if (near_zero_crossing) {
                     num_lattice_points_near_zero_crossing++;
                 }
@@ -1202,8 +1164,7 @@ save_density_grid_to_png(const GPUMemory<float>& density,
             if (z < res3d.z()) {
                 if (swap_y_z) {
                     *dst++ = (uint8_t)tcnn::clamp(
-                        (density_cpu[x + z * res3d.x() +
-                                     y * res3d.x() * res3d.z()] -
+                        (density_cpu[x + z * res3d.x() + y * res3d.x() * res3d.z()] -
                          thresh) *
                                 32.f +
                             128.5f,
@@ -1227,12 +1188,10 @@ save_density_grid_to_png(const GPUMemory<float>& density,
     stbi_write_png(filename, w, h, 1, pngpixels, w);
 
     tlog::success() << "Wrote density PNG to " << filename;
-    tlog::info() << "  #lattice points=" << N
-                 << " #zero-x voxels=" << num_voxels << " ("
-                 << ((num_voxels * 100.0) / N) << "%%)"
-                 << " #lattice near zero-x="
-                 << num_lattice_points_near_zero_crossing << " ("
-                 << ((num_lattice_points_near_zero_crossing * 100.0) / N)
+    tlog::info() << "  #lattice points=" << N << " #zero-x voxels=" << num_voxels
+                 << " (" << ((num_voxels * 100.0) / N) << "%%)"
+                 << " #lattice near zero-x=" << num_lattice_points_near_zero_crossing
+                 << " (" << ((num_lattice_points_near_zero_crossing * 100.0) / N)
                  << "%%)";
 
     free(pngpixels);
@@ -1265,24 +1224,18 @@ save_rgba_grid_to_png_sequence(const GPUMemory<Array4f>& rgba,
         uint8_t* dst = pngpixels;
         for (int y = 0; y < h; ++y) {
             for (int x = 0; x < w; ++x) {
-                size_t i = swap_y_z
-                               ? (x + z * res3d.x() + y * res3d.x() * res3d.z())
-                               : (x + (res3d.y() - 1 - y) * res3d.x() +
-                                  z * res3d.x() * res3d.y());
-                *dst++ =
-                    (uint8_t)tcnn::clamp(rgba_cpu[i].x() * 255.f, 0.f, 255.f);
-                *dst++ =
-                    (uint8_t)tcnn::clamp(rgba_cpu[i].y() * 255.f, 0.f, 255.f);
-                *dst++ =
-                    (uint8_t)tcnn::clamp(rgba_cpu[i].z() * 255.f, 0.f, 255.f);
-                *dst++ =
-                    (uint8_t)tcnn::clamp(rgba_cpu[i].w() * 255.f, 0.f, 255.f);
+                size_t i = swap_y_z ? (x + z * res3d.x() + y * res3d.x() * res3d.z())
+                                    : (x + (res3d.y() - 1 - y) * res3d.x() +
+                                       z * res3d.x() * res3d.y());
+                *dst++ = (uint8_t)tcnn::clamp(rgba_cpu[i].x() * 255.f, 0.f, 255.f);
+                *dst++ = (uint8_t)tcnn::clamp(rgba_cpu[i].y() * 255.f, 0.f, 255.f);
+                *dst++ = (uint8_t)tcnn::clamp(rgba_cpu[i].z() * 255.f, 0.f, 255.f);
+                *dst++ = (uint8_t)tcnn::clamp(rgba_cpu[i].w() * 255.f, 0.f, 255.f);
             }
         }
         // write slice
         char filename[256];
-        snprintf(
-            filename, sizeof(filename), "%s/%04d_%dx%d.png", path, z, w, h);
+        snprintf(filename, sizeof(filename), "%s/%04d_%dx%d.png", path, z, w, h);
         stbi_write_png(filename, w, h, 4, pngpixels, w * 4);
         free(pngpixels);
 
