@@ -35,7 +35,10 @@ def cli():
     "--mesh-output-path",
     type=str,
     default=None,
-    help="Output path for a marching-cubes based mesh from the NeRF or SDF model. Supports OBJ and PLY format",
+    help="""
+         Output path for a marching-cubes based mesh from the NeRF or SDF model.
+         Supports OBJ and PLY format
+         """,
 )
 @click.option(
     "--n-interpolation",
@@ -66,7 +69,10 @@ def cli():
     "--scene",
     type=str,
     required=True,
-    help="The scene to load. Can be the scene's name or a full path to the training data",
+    help="""
+         The scene to load.
+         Can be the scene's name or a full path to the training data
+         """,
 )
 @click.option(
     "--screenshot-dir",
@@ -103,8 +109,8 @@ def mesh(
     mesh_output_path: str,
     n_interpolation: int,
     n_steps: int,
-    render_aabb_min: click.Tuple([float, float, float]),
-    render_aabb_max: click.Tuple([float, float, float]),
+    render_aabb_min: click.Tuple,
+    render_aabb_max: click.Tuple,
     scene: str,
     screenshot_dir: str,
     screenshot_height: int,
