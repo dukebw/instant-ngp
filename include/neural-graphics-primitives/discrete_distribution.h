@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <neural-graphics-primitives/common.h>
+
+#include <vector>
+
 NGP_NAMESPACE_BEGIN
 
 struct DiscreteDistribution {

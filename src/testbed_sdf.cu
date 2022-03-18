@@ -17,6 +17,7 @@
 #include <neural-graphics-primitives/render_buffer.h>
 #include <neural-graphics-primitives/testbed.h>
 #include <neural-graphics-primitives/tinyobj_loader_wrapper.h>
+#include <tiny-cuda-nn/common.h>
 #include <tiny-cuda-nn/encodings/grid.h>
 #include <tiny-cuda-nn/gpu_matrix.h>
 #include <tiny-cuda-nn/network_with_input_encoding.h>

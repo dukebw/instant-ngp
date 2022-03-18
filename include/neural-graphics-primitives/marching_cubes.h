@@ -14,7 +14,10 @@
 
 #pragma once
 
+#include <neural-graphics-primitives/common.h>
 #include <tiny-cuda-nn/common.h>
+
+#include <neural-graphics-primitives/bounding_box.cuh>
 
 NGP_NAMESPACE_BEGIN
 
