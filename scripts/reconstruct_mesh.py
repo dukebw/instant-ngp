@@ -10,7 +10,6 @@ from pathlib import Path
 
 import click
 import numpy as np
-from scipy.spatial.transform import Rotation, Slerp
 
 # TODO(brendan): pyngp depends on common being imported first to set up PATH
 import common
@@ -22,6 +21,20 @@ from tqdm import tqdm
 @click.group()
 def cli():
     """CLI"""
+
+
+@cli.command()
+def mesh_from_saved():
+    """Mesh from a saved model"""
+    # TODO(brendan):
+    # 1. load saved model
+    # 2. extract vertices of marching cubes mesh using
+    #    testbed.compute_marching_cubes_mesh
+    # 3. point cloud denoising
+    # 4. import the transforms.json from colmap to get camera locations, then
+    #    use open3D hidden_point_removal
+    # 4. PSR
+    # 5. marching cubes
 
 
 @cli.command()
