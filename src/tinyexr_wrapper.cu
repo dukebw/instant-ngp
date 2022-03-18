@@ -111,11 +111,9 @@ save_exr(const float* data,
     }
 
     header.pixel_types = (int*)malloc(sizeof(int) * header.num_channels);
-    header.requested_pixel_types =
-        (int*)malloc(sizeof(int) * header.num_channels);
+    header.requested_pixel_types = (int*)malloc(sizeof(int) * header.num_channels);
     for (int i = 0; i < header.num_channels; i++) {
-        header.pixel_types[i] =
-            TINYEXR_PIXELTYPE_FLOAT;  // pixel type of input image
+        header.pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT;  // pixel type of input image
         header.requested_pixel_types[i] =
             TINYEXR_PIXELTYPE_HALF;  // pixel type of output image to be stored
                                      // in .EXR
@@ -124,8 +122,7 @@ save_exr(const float* data,
     const char* err = NULL;  // or nullptr in C++11 or later.
     int ret = SaveEXRImageToFile(&image, &header, outfilename, &err);
     if (ret != TINYEXR_SUCCESS) {
-        std::string error_message =
-            std::string("Failed to save EXR image: ") + err;
+        std::string error_message = std::string("Failed to save EXR image: ") + err;
         FreeEXRErrorMessage(err);  // free's buffer for an error message
         throw std::runtime_error(error_message);
     }
@@ -144,8 +141,7 @@ load_exr(float** data, int* width, int* height, const char* filename) {
 
     if (ret != TINYEXR_SUCCESS) {
         if (err) {
-            std::string error_message =
-                std::string("Failed to load EXR image: ") + err;
+            std::string error_message = std::string("Failed to load EXR image: ") + err;
             FreeEXRErrorMessage(err);
             throw std::runtime_error(error_message);
         } else {
@@ -155,17 +151,13 @@ load_exr(float** data, int* width, int* height, const char* filename) {
 }
 
 __half*
-load_exr_to_gpu(int* width,
-                int* height,
-                const char* filename,
-                bool fix_premult) {
+load_exr_to_gpu(int* width, int* height, const char* filename, bool fix_premult) {
     // 1. Read EXR version.
     EXRVersion exr_version;
 
     int ret = ParseEXRVersionFromFile(&exr_version, filename);
     if (ret != 0) {
-        std::string error_message =
-            std::string("Failed to parse EXR image version");
+        std::string error_message = std::string("Failed to parse EXR image version");
         throw std::runtime_error(error_message);
     }
 
@@ -201,8 +193,7 @@ load_exr_to_gpu(int* width,
 
     ret = LoadEXRImageFromFile(&exr_image, &exr_header, filename, &err);
     if (ret != 0) {
-        std::string error_message =
-            std::string("Failed to load EXR image: ") + err;
+        std::string error_message = std::string("Failed to load EXR image: ") + err;
         FreeEXRHeader(&exr_header);
         FreeEXRErrorMessage(err);  // free's buffer for an error message
         throw std::runtime_error(error_message);
@@ -230,30 +221,26 @@ load_exr_to_gpu(int* width,
     bool has_alpha = false;
     for (int c = 0; c < exr_header.num_channels; c++) {
         if (strcmp(exr_header.channels[c].name, "R") == 0) {
-            CUDA_CHECK_THROW(
-                cudaMemcpy(tmp.data() + n_pixels * 0 * bytes_per_pixel,
-                           exr_image.images[c],
-                           bytes_per_pixel * n_pixels,
-                           cudaMemcpyHostToDevice));
+            CUDA_CHECK_THROW(cudaMemcpy(tmp.data() + n_pixels * 0 * bytes_per_pixel,
+                                        exr_image.images[c],
+                                        bytes_per_pixel * n_pixels,
+                                        cudaMemcpyHostToDevice));
         } else if (strcmp(exr_header.channels[c].name, "G") == 0) {
-            CUDA_CHECK_THROW(
-                cudaMemcpy(tmp.data() + n_pixels * 1 * bytes_per_pixel,
-                           exr_image.images[c],
-                           bytes_per_pixel * n_pixels,
-                           cudaMemcpyHostToDevice));
+            CUDA_CHECK_THROW(cudaMemcpy(tmp.data() + n_pixels * 1 * bytes_per_pixel,
+                                        exr_image.images[c],
+                                        bytes_per_pixel * n_pixels,
+                                        cudaMemcpyHostToDevice));
         } else if (strcmp(exr_header.channels[c].name, "B") == 0) {
-            CUDA_CHECK_THROW(
-                cudaMemcpy(tmp.data() + n_pixels * 2 * bytes_per_pixel,
-                           exr_image.images[c],
-                           bytes_per_pixel * n_pixels,
-                           cudaMemcpyHostToDevice));
+            CUDA_CHECK_THROW(cudaMemcpy(tmp.data() + n_pixels * 2 * bytes_per_pixel,
+                                        exr_image.images[c],
+                                        bytes_per_pixel * n_pixels,
+                                        cudaMemcpyHostToDevice));
         } else if (strcmp(exr_header.channels[c].name, "A") == 0) {
             has_alpha = true;
-            CUDA_CHECK_THROW(
-                cudaMemcpy(tmp.data() + n_pixels * 3 * bytes_per_pixel,
-                           exr_image.images[c],
-                           bytes_per_pixel * n_pixels,
-                           cudaMemcpyHostToDevice));
+            CUDA_CHECK_THROW(cudaMemcpy(tmp.data() + n_pixels * 3 * bytes_per_pixel,
+                                        exr_image.images[c],
+                                        bytes_per_pixel * n_pixels,
+                                        cudaMemcpyHostToDevice));
         }
     }
 

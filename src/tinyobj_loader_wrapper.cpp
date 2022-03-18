@@ -36,8 +36,8 @@ load_obj(const std::string& filename) {
     std::string warn;
     std::string err;
 
-    bool ret = tinyobj::LoadObj(
-        &attrib, &shapes, &materials, &warn, &err, filename.c_str());
+    bool ret =
+        tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str());
 
     if (!warn.empty()) {
         tlog::warning() << "Obj: " << warn;
@@ -49,8 +49,8 @@ load_obj(const std::string& filename) {
 
     std::vector<Vector3f> result;
 
-    tlog::success() << "Loaded mesh \"" << filename << "\" file with "
-                    << shapes.size() << " shapes.";
+    tlog::success() << "Loaded mesh \"" << filename << "\" file with " << shapes.size()
+                    << " shapes.";
 
     // Loop over shapes
     for (size_t s = 0; s < shapes.size(); s++) {
@@ -69,12 +69,9 @@ load_obj(const std::string& filename) {
             for (size_t v = 0; v < 3; v++) {
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
-                const tinyobj::real_t vx =
-                    attrib.vertices[3 * idx.vertex_index + 0];
-                const tinyobj::real_t vy =
-                    attrib.vertices[3 * idx.vertex_index + 1];
-                const tinyobj::real_t vz =
-                    attrib.vertices[3 * idx.vertex_index + 2];
+                const tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+                const tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+                const tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
 
                 result.emplace_back(vx, vy, vz);
             }

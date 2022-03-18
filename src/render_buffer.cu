@@ -174,8 +174,7 @@ GLTexture::load(const uint8_t* data, Vector2i new_size, int n_channels) {
 
 void
 GLTexture::resize(const Vector2i& new_size, int n_channels, bool is_8bit) {
-    if (m_size == new_size && m_n_channels == n_channels &&
-        m_is_8bit == is_8bit) {
+    if (m_size == new_size && m_n_channels == n_channels && m_is_8bit == is_8bit) {
         return;
     }
 
@@ -231,11 +230,11 @@ GLTexture::CUDAMapping::CUDAMapping(GLuint texture_id, const Vector2i& size)
     : m_size{size} {
     static bool s_is_cuda_interop_supported = true;
     if (s_is_cuda_interop_supported) {
-        cudaError_t err = cudaGraphicsGLRegisterImage(
-            &m_graphics_resource,
-            texture_id,
-            GL_TEXTURE_2D,
-            cudaGraphicsRegisterFlagsSurfaceLoadStore);
+        cudaError_t err =
+            cudaGraphicsGLRegisterImage(&m_graphics_resource,
+                                        texture_id,
+                                        GL_TEXTURE_2D,
+                                        cudaGraphicsRegisterFlagsSurfaceLoadStore);
         if (err != cudaSuccess) {
             s_is_cuda_interop_supported = false;
             cudaGetLastError();  // Reset error
@@ -317,8 +316,8 @@ accumulate_kernel(Vector2i resolution,
             color.head<3>() = linear_to_srgb(color.head<3>());
             // fallthrough is intended!
         case EColorSpace::Linear:
-            tmp.head<3>() = (tmp.head<3>() * sample_count + color.head<3>()) /
-                            (sample_count + 1);
+            tmp.head<3>() =
+                (tmp.head<3>() * sample_count + color.head<3>()) / (sample_count + 1);
             break;
     }
 
@@ -374,8 +373,7 @@ tonemap(Array3f x, ETonemapCurve curve) {
         k3 = 4.0f * k3;
         k4 = 2.0f * k4;
     } else {  // if (curve == ETonemapCurve::Reinhard)
-        const Vector3f luminance_coefficients =
-            Vector3f(0.2126f, 0.7152f, 0.0722f);
+        const Vector3f luminance_coefficients = Vector3f(0.2126f, 0.7152f, 0.0722f);
         float Y = luminance_coefficients.dot(x.matrix());
 
         return x * (1.f / (Y + 1.0f));
@@ -449,10 +447,8 @@ overlay_image_kernel(Vector2i resolution,
     fy /= zoom;
     fy += screen_center.y() * resolution.y();
 
-    float u =
-        (fx - resolution.x() * 0.5f) * scale + image_resolution.x() * 0.5f;
-    float v =
-        (fy - resolution.y() * 0.5f) * scale + image_resolution.y() * 0.5f;
+    float u = (fx - resolution.x() * 0.5f) * scale + image_resolution.x() * 0.5f;
+    float v = (fy - resolution.y() * 0.5f) * scale + image_resolution.y() * 0.5f;
 
     int srcx = floorf(u);
     int srcy = floorf(v);
@@ -460,8 +456,8 @@ overlay_image_kernel(Vector2i resolution,
     uint32_t srcidx = srcx + image_resolution.x() * srcy;
 
     __half val[4];
-    if (srcx >= image_resolution.x() || srcy >= image_resolution.y() ||
-        srcx < 0 || srcy < 0) {
+    if (srcx >= image_resolution.x() || srcy >= image_resolution.y() || srcx < 0 ||
+        srcy < 0) {
         *(uint64_t*)&val[0] = 0;
     } else {
         *(uint64_t*)&val[0] = ((uint64_t*)image)[srcidx];
@@ -474,8 +470,7 @@ overlay_image_kernel(Vector2i resolution,
         background_color.head<3>() = srgb_to_linear(background_color.head<3>());
     } else {
         if (color.w() > 0) {
-            color.head<3>() =
-                linear_to_srgb(color.head<3>() / color.w()) * color.w();
+            color.head<3>() = linear_to_srgb(color.head<3>() / color.w()) * color.w();
         } else {
             color.head<3>() = Array3f::Zero();
         }
@@ -485,11 +480,8 @@ overlay_image_kernel(Vector2i resolution,
     color.head<3>() += background_color.head<3>() * weight;
     color.w() += weight;
 
-    color.head<3>() = tonemap(color.head<3>(),
-                              exposure,
-                              tonemap_curve,
-                              color_space,
-                              output_color_space);
+    color.head<3>() = tonemap(
+        color.head<3>(), exposure, tonemap_curve, color_space, output_color_space);
 
     Array4f prev_color;
     surf2Dread((float4*)&prev_color, surface, x * sizeof(float4), y);
@@ -519,8 +511,8 @@ colormap_turbo(float x) {
 
 __device__ Array3f
 colormap_viridis(float x) {
-    const Array3f c0 = Array3f{
-        0.2777273272234177f, 0.005407344544966578f, 0.3340998053353061f};
+    const Array3f c0 =
+        Array3f{0.2777273272234177f, 0.005407344544966578f, 0.3340998053353061f};
     const Array3f c1 =
         Array3f{0.1050930431085774f, 1.404613529898575f, 1.384590162594685f};
     const Array3f c2 =
@@ -559,10 +551,10 @@ overlay_false_color_kernel(Vector2i resolution,
         brightness / (0.0000001f + average[0]);  // average maps to 1/16th
 
     float scale = training_resolution[fov_axis] / float(resolution[fov_axis]);
-    float u = (x + 0.5f - resolution.x() * 0.5f) * scale +
-              training_resolution.x() * 0.5f;
-    float v = (y + 0.5f - resolution.y() * 0.5f) * scale +
-              training_resolution.y() * 0.5f;
+    float u =
+        (x + 0.5f - resolution.x() * 0.5f) * scale + training_resolution.x() * 0.5f;
+    float v =
+        (y + 0.5f - resolution.y() * 0.5f) * scale + training_resolution.y() * 0.5f;
     int srcx = floorf(u * error_map_resolution.x() /
                       float(max(1.f, (float)training_resolution.x())));
     int srcy = floorf(v * error_map_resolution.y() /
@@ -583,8 +575,7 @@ overlay_false_color_kernel(Vector2i resolution,
     Array4f color;
     surf2Dread((float4*)&color, surface, x * sizeof(float4), y);
     Array3f c = viridis ? colormap_viridis(err) : colormap_turbo(err);
-    float grey =
-        color.x() * 0.2126f + color.y() * 0.7152f + color.z() * 0.0722f;
+    float grey = color.x() * 0.2126f + color.y() * 0.7152f + color.z() * 0.0722f;
     color.x() = grey * __saturatef(c.x());
     color.y() = grey * __saturatef(c.y());
     color.z() = grey * __saturatef(c.z());
@@ -657,10 +648,8 @@ CudaRenderBuffer::accumulate(cudaStream_t stream) {
     auto res = resolution();
 
     if (m_spp == 0) {
-        CUDA_CHECK_THROW(cudaMemsetAsync(accumulate_buffer(),
-                                         0,
-                                         sizeof(Array4f) * res.x() * res.y(),
-                                         stream));
+        CUDA_CHECK_THROW(cudaMemsetAsync(
+            accumulate_buffer(), 0, sizeof(Array4f) * res.x() * res.y(), stream));
     }
 
     const dim3 threads = {16, 8, 1};
@@ -739,17 +728,16 @@ CudaRenderBuffer::overlay_false_color(Vector2i training_resolution,
     const dim3 blocks = {div_round_up((uint32_t)res.x(), threads.x),
                          div_round_up((uint32_t)res.y(), threads.y),
                          1};
-    overlay_false_color_kernel<<<blocks, threads, 0, stream>>>(
-        res,
-        training_resolution,
-        to_srgb,
-        fov_axis,
-        surface(),
-        error_map,
-        error_map_resolution,
-        average,
-        brightness,
-        viridis);
+    overlay_false_color_kernel<<<blocks, threads, 0, stream>>>(res,
+                                                               training_resolution,
+                                                               to_srgb,
+                                                               fov_axis,
+                                                               surface(),
+                                                               error_map,
+                                                               error_map_resolution,
+                                                               average,
+                                                               brightness,
+                                                               viridis);
 }
 
 NGP_NAMESPACE_END

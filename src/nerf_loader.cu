@@ -105,8 +105,7 @@ sharpen(const uint64_t num_pixels,
 
 __device__ inline float
 luma(__half c[4]) {
-    return float(c[0]) * 0.2126f + float(c[1]) * 0.7152f +
-           float(c[2]) * 0.0722f;
+    return float(c[0]) * 0.2126f + float(c[1]) * 0.7152f + float(c[2]) * 0.0722f;
 }
 
 __global__ void
@@ -118,11 +117,9 @@ compute_sharpness(Eigen::Vector2i sharpness_resolution,
     const uint32_t x = threadIdx.x + blockIdx.x * blockDim.x;
     const uint32_t y = threadIdx.y + blockIdx.y * blockDim.y;
     const uint32_t i = threadIdx.z + blockIdx.z * blockDim.z;
-    if (x >= sharpness_resolution.x() || y >= sharpness_resolution.y() ||
-        i >= n_images)
+    if (x >= sharpness_resolution.x() || y >= sharpness_resolution.y() || i >= n_images)
         return;
-    const size_t sharp_size =
-        sharpness_resolution.x() * sharpness_resolution.y();
+    const size_t sharp_size = sharpness_resolution.x() * sharpness_resolution.y();
     const size_t img_size = image_resolution.x() * image_resolution.y() * 4;
     sharpness_data += sharp_size * i + x + y * sharpness_resolution.x();
     images_data += img_size * i;
@@ -132,11 +129,9 @@ compute_sharpness(Eigen::Vector2i sharpness_resolution,
     int y_border = 0;  // (image_resolution.y()/sharpness_resolution.y())/4;
 
     int x1 = (x * image_resolution.x()) / sharpness_resolution.x() - x_border,
-        x2 = ((x + 1) * image_resolution.x()) / sharpness_resolution.x() +
-             x_border;
+        x2 = ((x + 1) * image_resolution.x()) / sharpness_resolution.x() + x_border;
     int y1 = (y * image_resolution.y()) / sharpness_resolution.y() - y_border,
-        y2 = ((y + 1) * image_resolution.y()) / sharpness_resolution.y() +
-             y_border;
+        y2 = ((y + 1) * image_resolution.y()) / sharpness_resolution.y() + y_border;
     // clamp to 1 pixel in from edge
     x1 = max(x1, 1);
     y1 = max(y1, 1);
@@ -168,9 +163,8 @@ compute_sharpness(Eigen::Vector2i sharpness_resolution,
     tot_lap2 *= scal;
     tot_lum *= scal;
     float variance_of_laplacian = tot_lap2 - tot_lap * tot_lap;
-    *sharpness_data =
-        (variance_of_laplacian);  // / max(0.00001f,tot_lum*tot_lum); // var /
-                                  // (tot+0.001f);
+    *sharpness_data = (variance_of_laplacian);  // / max(0.00001f,tot_lum*tot_lum); //
+                                                // var / (tot+0.001f);
 }
 
 bool
@@ -188,8 +182,7 @@ create_empty_nerf_dataset(size_t n_images,
     result.n_images = n_images;
     result.sharpness_resolution = {128, 72};
     result.sharpness_data.enlarge(result.sharpness_resolution.x() *
-                                  result.sharpness_resolution.y() *
-                                  result.n_images);
+                                  result.sharpness_resolution.y() * result.n_images);
     result.xforms.resize(n_images);
     result.metadata.resize(n_images);
     result.scale = NERF_SCALE;
@@ -208,11 +201,9 @@ create_empty_nerf_dataset(size_t n_images,
 }
 
 NerfDataset
-load_nerf(const std::vector<filesystem::path>& jsonpaths,
-          float sharpen_amount) {
+load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount) {
     if (jsonpaths.empty()) {
-        throw std::runtime_error{
-            "Cannot load NeRF data from an empty set of paths."};
+        throw std::runtime_error{"Cannot load NeRF data from an empty set of paths."};
     }
 
     tlog::info() << "Loading NeRF dataset from";
@@ -267,14 +258,13 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
         tlog::info() << "  " << jsonpaths[i];
         auto& frames = json["frames"];
 
-        float sharpness_discard_threshold = json.value(
-            "sharpness_discard_threshold", 0.0f);  // Keep all by default
+        float sharpness_discard_threshold =
+            json.value("sharpness_discard_threshold", 0.0f);  // Keep all by default
 
-        std::sort(frames.begin(),
-                  frames.end(),
-                  [](const auto& frame1, const auto& frame2) {
-                      return frame1["file_path"] < frame2["file_path"];
-                  });
+        std::sort(
+            frames.begin(), frames.end(), [](const auto& frame1, const auto& frame2) {
+                return frame1["file_path"] < frame2["file_path"];
+            });
 
         if (json.contains("n_frames")) {
             size_t cull_idx = std::min(frames.size(), (size_t)json["n_frames"]);
@@ -290,15 +280,14 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
             for (int i = 0; i < (int)frames_copy.size(); ++i) {
                 float mean_sharpness = 0.0f;
                 int mean_start = std::max(0, i - neighborhood_size);
-                int mean_end = std::min(i + neighborhood_size,
-                                        (int)frames_copy.size() - 1);
+                int mean_end =
+                    std::min(i + neighborhood_size, (int)frames_copy.size() - 1);
                 for (int j = mean_start; j < mean_end; ++j) {
                     mean_sharpness += float(frames_copy[j]["sharpness"]);
                 }
                 mean_sharpness /= (mean_end - mean_start);
 
-                if ((basepath /
-                     fs::path(std::string(frames_copy[i]["file_path"])))
+                if ((basepath / fs::path(std::string(frames_copy[i]["file_path"])))
                         .exists() &&
                     frames_copy[i]["sharpness"] >
                         sharpness_discard_threshold * mean_sharpness) {
@@ -326,8 +315,7 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
 
     size_t image_idx = 0;
     if (result.n_images == 0) {
-        throw std::invalid_argument{
-            "No training images were found for NeRF training!"};
+        throw std::invalid_argument{"No training images were found for NeRF training!"};
     }
 
     auto progress = tlog::progress(result.n_images);
@@ -367,9 +355,8 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
 
         if (result.from_mitsuba) {
             result.scale = 0.66f;
-            result.offset = {0.25f * result.scale,
-                             0.25f * result.scale,
-                             0.25f * result.scale};
+            result.offset = {
+                0.25f * result.scale, 0.25f * result.scale, 0.25f * result.scale};
         }
 
         if (json.contains("render_aabb")) {
@@ -494,20 +481,15 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
             const auto& aabb = json["aabb"];
             float length = std::max(
                 0.000001f,
-                std::max(
-                    std::max(std::abs(float(aabb[1][0]) - float(aabb[0][0])),
-                             std::abs(float(aabb[1][1]) - float(aabb[0][1]))),
-                    std::abs(float(aabb[1][2]) - float(aabb[0][2]))));
+                std::max(std::max(std::abs(float(aabb[1][0]) - float(aabb[0][0])),
+                                  std::abs(float(aabb[1][1]) - float(aabb[0][1]))),
+                         std::abs(float(aabb[1][2]) - float(aabb[0][2]))));
             result.scale = 1.f / length;
-            result.offset = {((float(aabb[1][0]) + float(aabb[0][0])) * 0.5f) *
-                                     -result.scale +
-                                 0.5f,
-                             ((float(aabb[1][1]) + float(aabb[0][1])) * 0.5f) *
-                                     -result.scale +
-                                 0.5f,
-                             ((float(aabb[1][2]) + float(aabb[0][2])) * 0.5f) *
-                                     -result.scale +
-                                 0.5f};
+            result.offset = {
+                ((float(aabb[1][0]) + float(aabb[0][0])) * 0.5f) * -result.scale + 0.5f,
+                ((float(aabb[1][1]) + float(aabb[0][1])) * 0.5f) * -result.scale + 0.5f,
+                ((float(aabb[1][2]) + float(aabb[0][2])) * 0.5f) * -result.scale +
+                    0.5f};
         }
 
         if (json.contains("frames") && json["frames"].is_array()) {
@@ -517,10 +499,9 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                     frame.contains("transform_matrix_start")
                         ? frame["transform_matrix_start"]
                         : frame["transform_matrix"];
-                nlohmann::json& jsonmatrix_end =
-                    frame.contains("transform_matrix_end")
-                        ? frame["transform_matrix_end"]
-                        : jsonmatrix_start;
+                nlohmann::json& jsonmatrix_end = frame.contains("transform_matrix_end")
+                                                     ? frame["transform_matrix_end"]
+                                                     : jsonmatrix_start;
                 const Vector3f p = Vector3f{float(jsonmatrix_start[0][3]),
                                             float(jsonmatrix_start[1][3]),
                                             float(jsonmatrix_start[2][3])} *
@@ -548,8 +529,7 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
             fs::path envmap_path = basepath / json_provided_path;
             if (!envmap_path.exists()) {
                 throw std::runtime_error{std::string{"Environment map path "} +
-                                         envmap_path.str() +
-                                         " does not exist."};
+                                         envmap_path.str() + " does not exist."};
             }
 
             if (equals_case_insensitive(envmap_path.extension(), "exr")) {
@@ -590,83 +570,73 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                             path = path.with_extension("exr");
                         }
                         if (!path.exists()) {
-                            throw std::runtime_error{
-                                "Could not find image file: " + path.str()};
+                            throw std::runtime_error{"Could not find image file: " +
+                                                     path.str()};
                         }
                     }
                     Vector2i res = Vector2i::Zero();
                     int comp = 0;
                     if (equals_case_insensitive(path.extension(), "exr")) {
-                        images[i_img] = load_exr_to_gpu(&res.x(),
-                                                        &res.y(),
-                                                        path.str().c_str(),
-                                                        fix_premult);
+                        images[i_img] = load_exr_to_gpu(
+                            &res.x(), &res.y(), path.str().c_str(), fix_premult);
 
                         if (image_type != ImageDataType::None &&
                             image_type != ImageDataType::Half) {
-                            throw std::runtime_error{
-                                "May not mix png and exr images."};
+                            throw std::runtime_error{"May not mix png and exr images."};
                         }
 
                         image_type = ImageDataType::Half;
                         image_data_on_gpu = true;
                         result.is_hdr = true;
                     } else {
-                        uint8_t* img = stbi_load(
-                            path.str().c_str(), &res.x(), &res.y(), &comp, 4);
+                        uint8_t* img =
+                            stbi_load(path.str().c_str(), &res.x(), &res.y(), &comp, 4);
 
                         fs::path alphapath =
-                            basepath / (std::string{frame["file_path"]} +
-                                        ".alpha."s + path.extension());
+                            basepath / (std::string{frame["file_path"]} + ".alpha."s +
+                                        path.extension());
                         if (alphapath.exists()) {
                             int wa = 0, ha = 0;
-                            uint8_t* alpha_img = stbi_load(
-                                alphapath.str().c_str(), &wa, &ha, &comp, 4);
+                            uint8_t* alpha_img =
+                                stbi_load(alphapath.str().c_str(), &wa, &ha, &comp, 4);
                             if (!alpha_img) {
                                 throw std::runtime_error{
-                                    "Could not load alpha image "s +
-                                    alphapath.str()};
+                                    "Could not load alpha image "s + alphapath.str()};
                             }
-                            ScopeGuard mem_guard{
-                                [&]() { stbi_image_free(alpha_img); }};
+                            ScopeGuard mem_guard{[&]() { stbi_image_free(alpha_img); }};
                             if (wa != res.x() || ha != res.y()) {
                                 throw std::runtime_error{
-                                    std::string{
-                                        "Alpha image has wrong resolution: "} +
+                                    std::string{"Alpha image has wrong resolution: "} +
                                     alphapath.str()};
                             }
-                            tlog::success()
-                                << "Alpha loaded from " << alphapath;
+                            tlog::success() << "Alpha loaded from " << alphapath;
                             for (int i = 0; i < res.prod(); ++i) {
                                 img[i * 4 + 3] = uint8_t(
                                     255.0f *
                                     srgb_to_linear(
                                         alpha_img[i * 4] *
-                                        (1.f /
-                                         255.f)));  // copy red channel of alpha
-                                                    // to alpha.png to our alpha
-                                                    // channel
+                                        (1.f / 255.f)));  // copy red channel of alpha
+                                                          // to alpha.png to our alpha
+                                                          // channel
                             }
                         }
 
                         fs::path maskpath =
-                            path.parent_path() / (std::string{"dynamic_mask_"} +
-                                                  path.basename() + ".png");
+                            path.parent_path() /
+                            (std::string{"dynamic_mask_"} + path.basename() + ".png");
                         if (maskpath.exists()) {
                             int wa = 0, ha = 0;
-                            uint8_t* mask_img = stbi_load(
-                                maskpath.str().c_str(), &wa, &ha, &comp, 4);
+                            uint8_t* mask_img =
+                                stbi_load(maskpath.str().c_str(), &wa, &ha, &comp, 4);
                             if (!mask_img) {
                                 throw std::runtime_error{
                                     std::string{"Could not load mask image "} +
                                     maskpath.str()};
                             }
-                            ScopeGuard mem_guard{
-                                [&]() { stbi_image_free(mask_img); }};
+                            ScopeGuard mem_guard{[&]() { stbi_image_free(mask_img); }};
                             if (wa != res.x() || ha != res.y()) {
                                 throw std::runtime_error{
-                                    std::string{
-                                        "Mask image has wrong resolution: "} +
+                                    std::string{"Mask image has wrong resolution: "} +
                                     maskpath.str()};
                             }
                             mask_color = 0x00FF00FF;  // HOT PINK
@@ -681,15 +651,13 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
 
                         if (image_type != ImageDataType::None &&
                             image_type != ImageDataType::Byte) {
-                            throw std::runtime_error{
-                                "May not mix png and exr images."};
+                            throw std::runtime_error{"May not mix png and exr images."};
                         }
                         image_type = ImageDataType::Byte;
                     }
 
                     if (!images[i_img]) {
-                        throw std::runtime_error{"image not found: " +
-                                                 path.str()};
+                        throw std::runtime_error{"image not found: " + path.str()};
                     }
 
                     if (!result.image_resolution.isZero() &&
@@ -698,18 +666,15 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                             "training images are not all the same size"};
                     }
 
-                    fs::path rayspath =
-                        path.parent_path() /
-                        (std::string{"rays_"} + path.basename() + ".dat");
+                    fs::path rayspath = path.parent_path() / (std::string{"rays_"} +
+                                                              path.basename() + ".dat");
                     if (enable_ray_loading && rayspath.exists()) {
                         has_rays = true;
                         uint32_t n_pixels = res.prod();
                         rays[i_img] = (Ray*)malloc(n_pixels * sizeof(Ray));
 
-                        std::ifstream rays_file{rayspath.str(),
-                                                std::ios::binary};
-                        rays_file.read((char*)rays[i_img],
-                                       n_pixels * sizeof(Ray));
+                        std::ifstream rays_file{rayspath.str(), std::ios::binary};
+                        rays_file.read((char*)rays[i_img], n_pixels * sizeof(Ray));
 
                         std::streampos fsize = 0;
                         fsize = rays_file.tellg();
@@ -717,9 +682,8 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                         fsize = rays_file.tellg() - fsize;
 
                         if (fsize > 0) {
-                            tlog::warning()
-                                << fsize << " bytes remaining in rays file "
-                                << rayspath;
+                            tlog::warning() << fsize << " bytes remaining in rays file "
+                                            << rayspath;
                         }
 
                         for (uint32_t px = 0; px < n_pixels; ++px) {
@@ -742,8 +706,7 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                             frame["driver_parameters"].value("LightY", 0.f),
                             frame["driver_parameters"].value("LightZ", 0.f));
                         result.metadata[i_img].light_dir =
-                            result.nerf_direction_to_ngp(
-                                light_dir.normalized());
+                            result.nerf_direction_to_ngp(light_dir.normalized());
                         result.has_light_dirs = true;
                     }
 
@@ -752,15 +715,14 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                     auto read_focal_length = [&](int resolution,
                                                  const std::string& axis) {
                         if (frame.contains(axis + "_fov")) {
-                            return fov_to_focal_length(
-                                resolution, (float)frame[axis + "_fov"]);
+                            return fov_to_focal_length(resolution,
+                                                       (float)frame[axis + "_fov"]);
                         } else if (json.contains("fl_"s + axis)) {
                             return (float)json["fl_"s + axis];
                         } else if (json.contains("camera_angle_"s + axis)) {
                             return fov_to_focal_length(
                                 resolution,
-                                (float)json["camera_angle_"s + axis] * 180 /
-                                    PI());
+                                (float)json["camera_angle_"s + axis] * 180 / PI());
                         } else {
                             return 0.0f;
                         }
@@ -768,20 +730,16 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
 
                     // x_fov is in degrees, camera_angle_x in radians. Yes, it's
                     // silly.
-                    float x_fl =
-                        read_focal_length(result.image_resolution.x(), "x");
-                    float y_fl =
-                        read_focal_length(result.image_resolution.y(), "y");
+                    float x_fl = read_focal_length(result.image_resolution.x(), "x");
+                    float y_fl = read_focal_length(result.image_resolution.y(), "y");
 
                     if (x_fl != 0) {
-                        result.metadata[i_img].focal_length =
-                            Vector2f::Constant(x_fl);
+                        result.metadata[i_img].focal_length = Vector2f::Constant(x_fl);
                         if (y_fl != 0) {
                             result.metadata[i_img].focal_length.y() = y_fl;
                         }
                     } else if (y_fl != 0) {
-                        result.metadata[i_img].focal_length =
-                            Vector2f::Constant(y_fl);
+                        result.metadata[i_img].focal_length = Vector2f::Constant(y_fl);
                     } else {
                         throw std::runtime_error{"Couldn't read fov."};
                     }
@@ -797,8 +755,7 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
 
                     result.metadata[i_img].rolling_shutter = rolling_shutter;
                     result.metadata[i_img].principal_point = principal_point;
-                    result.metadata[i_img].camera_distortion =
-                        camera_distortion;
+                    result.metadata[i_img].camera_distortion = camera_distortion;
 
                     result.xforms[i_img].start =
                         result.nerf_matrix_to_ngp(result.xforms[i_img].start);
@@ -817,9 +774,8 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
     waitAll(futures);
 
     tlog::success() << "Loaded " << images.size() << " images of size "
-                    << result.image_resolution.x() << "x"
-                    << result.image_resolution.y() << " after "
-                    << tlog::durationToString(progress.duration());
+                    << result.image_resolution.x() << "x" << result.image_resolution.y()
+                    << " after " << tlog::durationToString(progress.duration());
     tlog::info() << "  cam_aabb=" << cam_aabb;
 
     // concatenate all training images into a giant array
@@ -831,15 +787,13 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
     // Copy loaded images to the GPU. If the type is Half, directly copy to the
     // resulting buffer. Otherwise, copy to a temporary buffer and cast on the
     // GPU.
-    size_t bytes_per_channel =
-        image_type == ImageDataType::Byte
-            ? 1
-            : (image_type == ImageDataType::Half ? 2 : 4);
+    size_t bytes_per_channel = image_type == ImageDataType::Byte
+                                   ? 1
+                                   : (image_type == ImageDataType::Half ? 2 : 4);
     GPUMemory<uint8_t> images_data_gpu_tmp;
 
     if (image_type != ImageDataType::Half) {
-        images_data_gpu_tmp.resize(img_size * images.size() *
-                                   bytes_per_channel);
+        images_data_gpu_tmp.resize(img_size * images.size() * bytes_per_channel);
     }
     result.images_data.resize(img_size * images.size());
 
@@ -855,12 +809,11 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
                        ? (uint8_t*)result.images_data.data()
                        : (uint8_t*)images_data_gpu_tmp.data();
     pool.parallelFor<size_t>(0, result.n_images, [&](size_t i) {
-        CUDA_CHECK_THROW(cudaMemcpy(dst + img_size * i * bytes_per_channel,
-                                    images[i],
-                                    img_size * bytes_per_channel,
-                                    image_data_on_gpu
-                                        ? cudaMemcpyDeviceToDevice
-                                        : cudaMemcpyHostToDevice));
+        CUDA_CHECK_THROW(cudaMemcpy(
+            dst + img_size * i * bytes_per_channel,
+            images[i],
+            img_size * bytes_per_channel,
+            image_data_on_gpu ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));
         if (image_data_on_gpu) {
             CUDA_CHECK_THROW(cudaFree(images[i]));
         } else {
@@ -900,9 +853,8 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
         tcnn::GPUMemory<__half> images_data_2;
         images_data_2.resize(img_size * result.n_images);
         float center_w =
-            4.f +
-            1.f / sharpen_amount;  // center_w ranges from 5 (strong sharpening)
-                                   // to infinite (no sharpening)
+            4.f + 1.f / sharpen_amount;  // center_w ranges from 5 (strong sharpening)
+                                         // to infinite (no sharpening)
         linear_kernel(sharpen,
                       0,
                       nullptr,
@@ -923,14 +875,12 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths,
         div_round_up((uint32_t)result.sharpness_resolution.y(), threads.y),
         div_round_up((uint32_t)result.n_images, threads.z)};
     result.sharpness_data.enlarge(result.sharpness_resolution.x() *
-                                  result.sharpness_resolution.y() *
-                                  result.n_images);
-    compute_sharpness<<<blocks, threads, 0, nullptr>>>(
-        result.sharpness_resolution,
-        result.image_resolution,
-        result.n_images,
-        result.images_data.data(),
-        result.sharpness_data.data());
+                                  result.sharpness_resolution.y() * result.n_images);
+    compute_sharpness<<<blocks, threads, 0, nullptr>>>(result.sharpness_resolution,
+                                                       result.image_resolution,
+                                                       result.n_images,
+                                                       result.images_data.data(),
+                                                       result.sharpness_data.data());
 
     CUDA_CHECK_THROW(cudaDeviceSynchronize());
 
@@ -956,19 +906,17 @@ NerfDataset::set_training_image(int frame_idx, const float* pixels) {
                   (float*)images_data_gpu_tmp.data(),
                   images_data.data() + img_size * (size_t)frame_idx);
     const dim3 threads = {16, 8, 1};
-    const dim3 blocks = {
-        div_round_up((uint32_t)sharpness_resolution.x(), threads.x),
-        div_round_up((uint32_t)sharpness_resolution.y(), threads.y),
-        div_round_up((uint32_t)n_images, threads.z)};
+    const dim3 blocks = {div_round_up((uint32_t)sharpness_resolution.x(), threads.x),
+                         div_round_up((uint32_t)sharpness_resolution.y(), threads.y),
+                         div_round_up((uint32_t)n_images, threads.z)};
     sharpness_data.enlarge(sharpness_resolution.x() * sharpness_resolution.y());
     compute_sharpness<<<blocks, threads, 0, nullptr>>>(
         sharpness_resolution,
         image_resolution,
         1,
         images_data.data() + img_size * (size_t)frame_idx,
-        sharpness_data.data() + sharpness_resolution.x() *
-                                    sharpness_resolution.y() *
-                                    (size_t)frame_idx);
+        sharpness_data.data() +
+            sharpness_resolution.x() * sharpness_resolution.y() * (size_t)frame_idx);
 }
 
 NGP_NAMESPACE_END

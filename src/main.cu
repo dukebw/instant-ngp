@@ -137,8 +137,7 @@ main(int argc, char** argv) {
 
             fs::path scene_path = get(scene_flag);
             if (!scene_path.exists()) {
-                tlog::error()
-                    << "Scene path " << scene_path << " does not exist.";
+                tlog::error() << "Scene path " << scene_path << " does not exist.";
                 return 1;
             }
 
@@ -147,8 +146,7 @@ main(int argc, char** argv) {
                 mode = ETestbedMode::Nerf;
             } else if (equals_case_insensitive(scene_path.extension(), "obj")) {
                 mode = ETestbedMode::Sdf;
-            } else if (equals_case_insensitive(scene_path.extension(),
-                                               "nvdb")) {
+            } else if (equals_case_insensitive(scene_path.extension(), "nvdb")) {
                 mode = ETestbedMode::Volume;
             } else {
                 mode = ETestbedMode::Image;
@@ -175,8 +173,7 @@ main(int argc, char** argv) {
         if (scene_flag) {
             fs::path scene_path = get(scene_flag);
             if (!scene_path.exists()) {
-                tlog::error()
-                    << "Scene path " << scene_path << " does not exist.";
+                tlog::error() << "Scene path " << scene_path << " does not exist.";
                 return 1;
             }
             testbed.load_training_data(scene_path.str());
@@ -202,8 +199,8 @@ main(int argc, char** argv) {
             // Load network from a snapshot if one is provided
             fs::path snapshot_path = get(snapshot_flag);
             if (!snapshot_path.exists()) {
-                tlog::error()
-                    << "Snapshot path " << snapshot_path << " does not exist.";
+                tlog::error() << "Snapshot path " << snapshot_path
+                              << " does not exist.";
                 return 1;
             }
 
@@ -215,8 +212,7 @@ main(int argc, char** argv) {
             if (network_config_flag) {
                 auto network_config_str = get(network_config_flag);
                 if ((network_config_path / network_config_str).exists()) {
-                    network_config_path =
-                        network_config_path / network_config_str;
+                    network_config_path = network_config_path / network_config_str;
                 } else {
                     network_config_path = network_config_str;
                 }

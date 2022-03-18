@@ -54,9 +54,7 @@ halton(size_t idx) {
 }
 
 __global__ void
-halton23_kernel(uint32_t n_elements,
-                size_t base_idx,
-                Vector2f* __restrict__ output) {
+halton23_kernel(uint32_t n_elements, size_t base_idx, Vector2f* __restrict__ output) {
     uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= n_elements) return;
 
@@ -100,8 +98,7 @@ stratify2_kernel(uint32_t n_elements,
     uint32_t y = in_batch_index >> log2Size;
 
     Vector2f val = inout[i];
-    inout[i] = {val.x() / size + ((float)x / size),
-                val.y() / size + ((float)y / size)};
+    inout[i] = {val.x() / size + ((float)x / size), val.y() / size + ((float)y / size)};
 }
 
 __global__ void
@@ -120,19 +117,16 @@ init_image_coords(Vector2f* __restrict__ positions,
         return;
     }
 
-    Vector2f jit =
-        ld_random_pixel_offset(snap_to_pixel_centers ? 0 : spp, x, y);
-    Vector2f offset =
-        screen_center.cwiseProduct(resolution.cast<float>()) + jit;
+    Vector2f jit = ld_random_pixel_offset(snap_to_pixel_centers ? 0 : spp, x, y);
+    Vector2f offset = screen_center.cwiseProduct(resolution.cast<float>()) + jit;
 
     float y_scale = view_dist;
     float x_scale = y_scale * resolution.x() / resolution.y();
 
-    Vector2f uv = {((x_scale * (x + offset.x())) / resolution.x() -
-                    view_dist * image_pos.x()) /
-                       image_resolution.x() * image_resolution.y(),
-                   (y_scale * (y + offset.y())) / resolution.y() -
-                       view_dist * image_pos.y()};
+    Vector2f uv = {
+        ((x_scale * (x + offset.x())) / resolution.x() - view_dist * image_pos.x()) /
+            image_resolution.x() * image_resolution.y(),
+        (y_scale * (y + offset.y())) / resolution.y() - view_dist * image_pos.y()};
 
     uint32_t idx = x + resolution.x() * y;
     positions[idx] = uv;
@@ -144,8 +138,7 @@ init_image_coords(Vector2f* __restrict__ positions,
 #define CHROMA_SCALE 0.2f
 
 __global__ void
-colorspace_convert_image_half(Vector2i resolution,
-                              const char* __restrict__ texture) {
+colorspace_convert_image_half(Vector2i resolution, const char* __restrict__ texture) {
     uint32_t x = blockIdx.x * blockDim.x + threadIdx.x;
     uint32_t y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x >= resolution.x() || y >= resolution.y()) return;
@@ -159,8 +152,7 @@ colorspace_convert_image_half(Vector2i resolution,
 }
 
 __global__ void
-colorspace_convert_image_float(Vector2i resolution,
-                               const char* __restrict__ texture) {
+colorspace_convert_image_float(Vector2i resolution, const char* __restrict__ texture) {
     uint32_t x = blockIdx.x * blockDim.x + threadIdx.x;
     uint32_t y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x >= resolution.x() || y >= resolution.y()) return;
@@ -249,11 +241,10 @@ eval_image_kernel_and_snap(uint32_t n_elements,
         pos_int = pos_int.cwiseMax(0).cwiseMin(resolution - Vector2i::Ones());
         val = read_val(pos_int.x(), pos_int.y());
     } else {
-        pos = (pos.cwiseProduct(resolution.cast<float>()) -
-               Vector2f::Constant(0.5f))
-                  .cwiseMax(0.0f)
-                  .cwiseMin(resolution.cast<float>() -
-                            Vector2f::Constant(1.0f + 1e-4f));
+        pos =
+            (pos.cwiseProduct(resolution.cast<float>()) - Vector2f::Constant(0.5f))
+                .cwiseMax(0.0f)
+                .cwiseMin(resolution.cast<float>() - Vector2f::Constant(1.0f + 1e-4f));
 
         const Vector2i pos_int = pos.cast<int>();
         const Vector2f weight = pos - pos_int.cast<float>();
@@ -277,9 +268,7 @@ eval_image_kernel_and_snap(uint32_t n_elements,
 }
 
 void
-Testbed::train_image(size_t target_batch_size,
-                     size_t n_steps,
-                     cudaStream_t stream) {
+Testbed::train_image(size_t target_batch_size, size_t n_steps, cudaStream_t stream) {
     const uint32_t n_output_dims = 3;
     const uint32_t n_input_dims = 2;
 
@@ -311,11 +300,10 @@ Testbed::train_image(size_t target_batch_size,
                       m_seed,
                       m_image.training.positions.data());
     } else {
-        generate_random_uniform<float>(
-            stream,
-            m_rng,
-            n_elements * n_input_dims,
-            (float*)m_image.training.positions.data());
+        generate_random_uniform<float>(stream,
+                                       m_rng,
+                                       n_elements * n_input_dims,
+                                       (float*)m_image.training.positions.data());
         if (m_image.random_mode == ERandomMode::Stratified) {
             uint32_t log2_batch_size = 0;
             if (!is_pot(batch_size, &log2_batch_size)) {
@@ -363,8 +351,7 @@ Testbed::train_image(size_t target_batch_size,
     for (size_t i = 0; i < n_steps; i += GRAPH_SIZE) {
         float loss_value;
         for (uint32_t j = 0; j < GRAPH_SIZE; ++j) {
-            uint32_t training_offset =
-                (uint32_t)((i + j) % n_batches) * batch_size;
+            uint32_t training_offset = (uint32_t)((i + j) % n_batches) * batch_size;
 
             GPUMatrix<float> training_batch_matrix(
                 (float*)(m_image.training.positions.data() + training_offset),
@@ -465,12 +452,11 @@ Testbed::render_image(CudaRenderBuffer& render_buffer, cudaStream_t stream) {
     }
 
     // Splat colors to render texture
-    shade_kernel_image<<<blocks, threads, 0, stream>>>(
-        res,
-        m_image.render_coords.data(),
-        m_image.render_out.data(),
-        render_buffer.frame_buffer(),
-        m_image.training.linear_colors);
+    shade_kernel_image<<<blocks, threads, 0, stream>>>(res,
+                                                       m_image.render_coords.data(),
+                                                       m_image.render_out.data(),
+                                                       render_buffer.frame_buffer(),
+                                                       m_image.training.linear_colors);
 }
 
 void
@@ -485,16 +471,15 @@ Testbed::load_image() {
 
 #ifdef COLOR_SPACE_CONVERT
     const dim3 threads = {32, 32, 1};
-    const dim3 blocks = {
-        div_round_up((uint32_t)m_image.resolution.x(), threads.x),
-        div_round_up((uint32_t)m_image.resolution.x(), threads.y),
-        1};
+    const dim3 blocks = {div_round_up((uint32_t)m_image.resolution.x(), threads.x),
+                         div_round_up((uint32_t)m_image.resolution.x(), threads.y),
+                         1};
     if (m_image.type == EDataType::Half)
-        colorspace_convert_image_half<<<blocks, threads, 0>>>(
-            m_image.resolution, m_image.data.data());
+        colorspace_convert_image_half<<<blocks, threads, 0>>>(m_image.resolution,
+                                                              m_image.data.data());
     else
-        colorspace_convert_image_float<<<blocks, threads, 0>>>(
-            m_image.resolution, m_image.data.data());
+        colorspace_convert_image_float<<<blocks, threads, 0>>>(m_image.resolution,
+                                                               m_image.data.data());
 #endif
 
     tlog::success() << "Loaded a "
@@ -512,8 +497,8 @@ Testbed::load_exr_image() {
     tlog::info() << "Loading EXR image from " << m_data_path;
 
     // First step: load an image that we'd like to learn
-    GPUMemory<float> image = load_exr(
-        m_data_path.str(), m_image.resolution.x(), m_image.resolution.y());
+    GPUMemory<float> image =
+        load_exr(m_data_path.str(), m_image.resolution.x(), m_image.resolution.y());
     m_image.data.resize(image.size() * sizeof(float));
     CUDA_CHECK_THROW(cudaMemcpy(m_image.data.data(),
                                 image.data(),
@@ -532,8 +517,8 @@ Testbed::load_stbi_image() {
     tlog::info() << "Loading STBI image from " << m_data_path;
 
     // First step: load an image that we'd like to learn
-    GPUMemory<float> image = load_stbi(
-        m_data_path.str(), m_image.resolution.x(), m_image.resolution.y());
+    GPUMemory<float> image =
+        load_stbi(m_data_path.str(), m_image.resolution.x(), m_image.resolution.y());
     m_image.data.resize(image.size() * sizeof(float));
     CUDA_CHECK_THROW(cudaMemcpy(m_image.data.data(),
                                 image.data(),
@@ -600,8 +585,7 @@ Testbed::load_binary_image() {
     // }
 
     std::vector<__half> image(n_pixels * 4);
-    f.read(reinterpret_cast<char*>(image.data()),
-           sizeof(__half) * image.size());
+    f.read(reinterpret_cast<char*>(image.data()), sizeof(__half) * image.size());
     CUDA_CHECK_THROW(cudaMemcpy(m_image.data.data(),
                                 image.data(),
                                 image.size() * sizeof(__half),
@@ -661,8 +645,7 @@ Testbed::compute_image_mse() {
         uint32_t batch_size =
             (std::min(max_batch_size, n_elements - offset) + 255u) & (~255u);
 
-        GPUMatrix<float> pos_matrix(
-            (float*)(pos.data()), n_input_dims, batch_size);
+        GPUMatrix<float> pos_matrix((float*)(pos.data()), n_input_dims, batch_size);
         GPUMatrix<float> targets_matrix(
             (float*)(targets.data()), n_output_dims, batch_size);
         GPUMatrix<float> predictions_matrix(

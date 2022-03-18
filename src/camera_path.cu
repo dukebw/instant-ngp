@@ -29,11 +29,7 @@ using namespace nlohmann;
 NGP_NAMESPACE_BEGIN
 
 CameraKeyframe
-lerp(const CameraKeyframe& p0,
-     const CameraKeyframe& p1,
-     float t,
-     float t0,
-     float t1) {
+lerp(const CameraKeyframe& p0, const CameraKeyframe& p1, float t, float t0, float t1) {
     t = (t - t0) / (t1 - t0);
     Eigen::Vector4f R1 = p1.R;
 
@@ -137,8 +133,8 @@ CameraPath::load(const std::string& filepath_string,
                  const Eigen::Matrix<float, 3, 4>& first_xform) {
     std::ifstream f(filepath_string);
     if (!f) {
-        throw std::runtime_error{std::string{"Camera path \""} +
-                                 filepath_string + "\" does not exist."};
+        throw std::runtime_error{std::string{"Camera path \""} + filepath_string +
+                                 "\" does not exist."};
     }
 
     json j;
@@ -174,8 +170,7 @@ CameraPath::imgui(char path_filename_buf[128],
     int n = std::max(0, int(m_keyframes.size()) - 1);
     int read = 0;  // 1=smooth, 2=hard
     if (!m_keyframes.empty()) {
-        if (ImGui::SliderFloat("camera path time", &m_playtime, 0.f, 1.f))
-            read = 1;
+        if (ImGui::SliderFloat("camera path time", &m_playtime, 0.f, 1.f)) read = 1;
         ImGui::SliderFloat("auto play speed", &m_autoplayspeed, 0.f, 1.f);
         if (m_autoplayspeed > 0.f && m_playtime < 1.f) {
             m_playtime += m_autoplayspeed * (frame_milliseconds / 1000.f);
@@ -187,9 +182,8 @@ CameraPath::imgui(char path_filename_buf[128],
         int i = (int)ceil(m_playtime * (float)n + 0.001f);
         if (i > m_keyframes.size()) i = m_keyframes.size();
         if (i < 0) i = 0;
-        m_keyframes.insert(
-            m_keyframes.begin() + i,
-            CameraKeyframe(camera, slice_plane_z, scale, fov, dof));
+        m_keyframes.insert(m_keyframes.begin() + i,
+                           CameraKeyframe(camera, slice_plane_z, scale, fov, dof));
         m_update_cam_from_path = false;
         int n = std::max(0, int(m_keyframes.size()) - 1);
         m_playtime = n ? float(i) / float(n) : 1.f;
@@ -202,8 +196,7 @@ CameraPath::imgui(char path_filename_buf[128],
             int i = (int)ceil(m_playtime * (float)n + 0.001f);
             if (i > m_keyframes.size()) i = (int)m_keyframes.size();
             if (i < 0) i = 0;
-            m_keyframes.insert(m_keyframes.begin() + i,
-                               eval_camera_path(m_playtime));
+            m_keyframes.insert(m_keyframes.begin() + i, eval_camera_path(m_playtime));
             m_playtime = float(i) / float(n + 1);
             read = 2;
         }
@@ -216,9 +209,7 @@ CameraPath::imgui(char path_filename_buf[128],
         ImGui::SameLine();
         if (ImGui::Button("<")) {
             m_playtime =
-                n ? std::max(
-                        0.f,
-                        floorf((m_playtime - 0.0001f) * (float)n) / (float)n)
+                n ? std::max(0.f, floorf((m_playtime - 0.0001f) * (float)n) / (float)n)
                   : 0.f;
             read = 2;
         }
@@ -229,10 +220,9 @@ CameraPath::imgui(char path_filename_buf[128],
         }
         ImGui::SameLine();
         if (ImGui::Button(">")) {
-            m_playtime = n ? std::min(1.f,
-                                      ceilf((m_playtime + 0.0001f) * (float)n) /
-                                          (float)n)
-                           : 1.f;
+            m_playtime =
+                n ? std::min(1.f, ceilf((m_playtime + 0.0001f) * (float)n) / (float)n)
+                  : 1.f;
             read = 2;
         }
         ImGui::SameLine();
@@ -255,8 +245,7 @@ CameraPath::imgui(char path_filename_buf[128],
         }
         ImGui::SameLine();
         if (ImGui::Button("Set")) {
-            m_keyframes[i] =
-                CameraKeyframe(camera, slice_plane_z, scale, fov, dof);
+            m_keyframes[i] = CameraKeyframe(camera, slice_plane_z, scale, fov, dof);
             read = 2;
             if (n) m_playtime = i / float(n);
         }
@@ -286,9 +275,8 @@ CameraPath::imgui(char path_filename_buf[128],
                 std::string{"Failed to load camera path: "} + e.what();
         }
     }
-    if (ImGui::BeginPopupModal("Camera path load error",
-                               NULL,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::BeginPopupModal(
+            "Camera path load error", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("%s", camera_path_load_error_string.c_str());
         if (ImGui::Button("OK", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
@@ -302,17 +290,12 @@ CameraPath::imgui(char path_filename_buf[128],
     if (!m_keyframes.empty()) {
         int i = (int)round(m_playtime * (float)n);
         ImGui::Text("Current keyframe %d/%d:", i, n + 1);
-        if (ImGui::SliderFloat("fov", &m_keyframes[i].fov, 0.0f, 120.0f))
+        if (ImGui::SliderFloat("fov", &m_keyframes[i].fov, 0.0f, 120.0f)) read = 2;
+        if (ImGui::SliderFloat("dof", &m_keyframes[i].dof, 0.0f, 0.1f)) read = 2;
+        if (ImGui::SliderFloat(
+                "slice Z", &m_keyframes[i].slice, -bounding_radius, bounding_radius))
             read = 2;
-        if (ImGui::SliderFloat("dof", &m_keyframes[i].dof, 0.0f, 0.1f))
-            read = 2;
-        if (ImGui::SliderFloat("slice Z",
-                               &m_keyframes[i].slice,
-                               -bounding_radius,
-                               bounding_radius))
-            read = 2;
-        if (ImGui::SliderFloat("scale", &m_keyframes[i].scale, 0.f, 10.f))
-            read = 2;
+        if (ImGui::SliderFloat("scale", &m_keyframes[i].scale, 0.f, 10.f)) read = 2;
     }
     return m_keyframes.empty() ? 0 : read;
 }
@@ -349,63 +332,36 @@ visualize_unit_cube(const Matrix<float, 4, 4>& world2proj) {
                    Vector3f{0.f, 0.f, 0.f},
                    Vector3f{0.f, 0.f, 1.f},
                    0xffff4040);  // Z
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{1.f, 0.f, 0.f},
-                   Vector3f{1.f, 0.f, 1.f},
-                   0xffffffff);
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{0.f, 1.f, 0.f},
-                   Vector3f{0.f, 1.f, 1.f},
-                   0xffffffff);
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{1.f, 1.f, 0.f},
-                   Vector3f{1.f, 1.f, 1.f},
-                   0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{1.f, 0.f, 0.f}, Vector3f{1.f, 0.f, 1.f}, 0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{0.f, 1.f, 0.f}, Vector3f{0.f, 1.f, 1.f}, 0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{1.f, 1.f, 0.f}, Vector3f{1.f, 1.f, 1.f}, 0xffffffff);
 
     add_debug_line(world2proj,
                    list,
                    Vector3f{0.f, 0.f, 0.f},
                    Vector3f{1.f, 0.f, 0.f},
                    0xff4040ff);  // X
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{0.f, 1.f, 0.f},
-                   Vector3f{1.f, 1.f, 0.f},
-                   0xffffffff);
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{0.f, 0.f, 1.f},
-                   Vector3f{1.f, 0.f, 1.f},
-                   0xffffffff);
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{0.f, 1.f, 1.f},
-                   Vector3f{1.f, 1.f, 1.f},
-                   0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{0.f, 1.f, 0.f}, Vector3f{1.f, 1.f, 0.f}, 0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{0.f, 0.f, 1.f}, Vector3f{1.f, 0.f, 1.f}, 0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{0.f, 1.f, 1.f}, Vector3f{1.f, 1.f, 1.f}, 0xffffffff);
 
     add_debug_line(world2proj,
                    list,
                    Vector3f{0.f, 0.f, 0.f},
                    Vector3f{0.f, 1.f, 0.f},
                    0xff40ff40);  // Y
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{1.f, 0.f, 0.f},
-                   Vector3f{1.f, 1.f, 0.f},
-                   0xffffffff);
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{0.f, 0.f, 1.f},
-                   Vector3f{0.f, 1.f, 1.f},
-                   0xffffffff);
-    add_debug_line(world2proj,
-                   list,
-                   Vector3f{1.f, 0.f, 1.f},
-                   Vector3f{1.f, 1.f, 1.f},
-                   0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{1.f, 0.f, 0.f}, Vector3f{1.f, 1.f, 0.f}, 0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{0.f, 0.f, 1.f}, Vector3f{0.f, 1.f, 1.f}, 0xffffffff);
+    add_debug_line(
+        world2proj, list, Vector3f{1.f, 0.f, 1.f}, Vector3f{1.f, 1.f, 1.f}, 0xffffffff);
 }
 
 void
@@ -417,12 +373,9 @@ visualize_nerf_camera(const Matrix<float, 4, 4>& world2proj,
     const float axis_size = 0.025f;
     const Vector3f* xforms = (const Vector3f*)&xform;
     Vector3f pos = xforms[3];
-    add_debug_line(
-        world2proj, list, pos, pos + axis_size * xforms[0], 0xff4040ff);
-    add_debug_line(
-        world2proj, list, pos, pos + axis_size * xforms[1], 0xff40ff40);
-    add_debug_line(
-        world2proj, list, pos, pos + axis_size * xforms[2], 0xffff4040);
+    add_debug_line(world2proj, list, pos, pos + axis_size * xforms[0], 0xff4040ff);
+    add_debug_line(world2proj, list, pos, pos + axis_size * xforms[1], 0xff40ff40);
+    add_debug_line(world2proj, list, pos, pos + axis_size * xforms[2], 0xffff4040);
     float xs = axis_size * aspect;
     float ys = axis_size;
     float zs = axis_size * 2.f * aspect;
@@ -453,13 +406,12 @@ CameraPath::imgui_viz(Matrix<float, 4, 4>& view2proj,
     float zfar = 100.f;
     float znear = 0.1f;
     view2proj_guizmo << fly * 2.f / aspect, 0, 0, 0, 0, -fly * 2.f, 0, 0, 0, 0,
-        (zfar + znear) / (zfar - znear), -(2.f * zfar * znear) / (zfar - znear),
-        0, 0, 1, 0;
+        (zfar + znear) / (zfar - znear), -(2.f * zfar * znear) / (zfar - znear), 0, 0,
+        1, 0;
 
     if (!m_update_cam_from_path) {
         ImDrawList* list = ImGui::GetForegroundDrawList();
-        int cur_cam_i =
-            (int)round(m_playtime * (float)(m_keyframes.size() - 1));
+        int cur_cam_i = (int)round(m_playtime * (float)(m_keyframes.size() - 1));
         Eigen::Vector3f prevp;
         for (int i = 0; i < m_keyframes.size(); ++i) {
             visualize_nerf_camera(world2proj,
@@ -483,8 +435,7 @@ CameraPath::imgui_viz(Matrix<float, 4, 4>& view2proj,
                                      NULL,
                                      NULL)) {
                 int i0 = cur_cam_i;
-                while (i0 > 0 &&
-                       m_keyframes[cur_cam_i].SamePosAs(m_keyframes[i0 - 1]))
+                while (i0 > 0 && m_keyframes[cur_cam_i].SamePosAs(m_keyframes[i0 - 1]))
                     i0--;
                 int i1 = cur_cam_i;
                 while (i1 < m_keyframes.size() - 1 &&
@@ -498,10 +449,8 @@ CameraPath::imgui_viz(Matrix<float, 4, 4>& view2proj,
                 changed = true;
             }
 
-            visualize_nerf_camera(world2proj,
-                                  eval_camera_path(m_playtime).m(),
-                                  aspect,
-                                  0xff80ff80);
+            visualize_nerf_camera(
+                world2proj, eval_camera_path(m_playtime).m(), aspect, 0xff80ff80);
             float dt = 0.05f / (float)m_keyframes.size();
             Eigen::Vector3f prevp;
             for (float t = 0.f;; t += dt) {
@@ -509,8 +458,7 @@ CameraPath::imgui_viz(Matrix<float, 4, 4>& view2proj,
                 Eigen::Vector3f p = eval_camera_path(t).T;
                 if (t) {
                     // draw a line
-                    add_debug_line(
-                        world2proj, list, (prevp + p) * 0.5f, p, 0xff80c0ff);
+                    add_debug_line(world2proj, list, (prevp + p) * 0.5f, p, 0xff80c0ff);
                 }
                 prevp = p;
                 if (t >= 1.f) break;

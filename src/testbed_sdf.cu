@@ -129,8 +129,7 @@ evaluate_shading(const Vector3f& base_color,
     // normalize luminance to isolate hue and saturation components
     Vector3f Ctint = base_color * (1.f / (luminance + 0.00001f));
     Vector3f Cspec0 =
-        mix(mix(Vector3f(1.0f, 1.0f, 1.0f), Ctint, specular_tint) * specular *
-                0.08f,
+        mix(mix(Vector3f(1.0f, 1.0f, 1.0f), Ctint, specular_tint) * specular * 0.08f,
             base_color,
             metallic);
     Vector3f Csheen = mix(Vector3f(1.0f, 1.0f, 1.0f), Ctint, sheen_tint);
@@ -201,11 +200,9 @@ advance_pos_kernel_sdf(const uint32_t n_elements,
     pos += distance * payload.dir;
 
     // Skip over regions not covered by the octree
-    if (octree_nodes &&
-        !TriangleOctree::contains(octree_nodes, max_depth, pos)) {
+    if (octree_nodes && !TriangleOctree::contains(octree_nodes, max_depth, pos)) {
         float octree_distance =
-            (TriangleOctree::ray_intersect(
-                 octree_nodes, max_depth, pos, payload.dir) +
+            (TriangleOctree::ray_intersect(octree_nodes, max_depth, pos, payload.dir) +
              1e-6f);
         distance += octree_distance;
         pos += octree_distance * payload.dir;
@@ -231,8 +228,8 @@ advance_pos_kernel_sdf(const uint32_t n_elements,
         total_distances[i] = total_distance + distance;
     }
 
-    bool stay_alive = distance > maximum_distance &&
-                      fabsf(distance / 2) > 3 * maximum_distance;
+    bool stay_alive =
+        distance > maximum_distance && fabsf(distance / 2) > 3 * maximum_distance;
     if (!stay_alive) {
         payload.alive = false;
         return;
@@ -288,12 +285,11 @@ prepare_shadow_rays(const uint32_t n_elements,
     float t = fmaxf(aabb.ray_intersect(view_pos, dir).x() + 1e-6f, 0.0f);
     view_pos += t * dir;
 
-    if (octree_nodes &&
-        !TriangleOctree::contains(octree_nodes, max_depth, view_pos)) {
-        t = fmaxf(0.0f,
-                  TriangleOctree::ray_intersect(
-                      octree_nodes, max_depth, view_pos, dir) +
-                      1e-6f);
+    if (octree_nodes && !TriangleOctree::contains(octree_nodes, max_depth, view_pos)) {
+        t = fmaxf(
+            0.0f,
+            TriangleOctree::ray_intersect(octree_nodes, max_depth, view_pos, dir) +
+                1e-6f);
         view_pos += t * dir;
     }
 
@@ -381,25 +377,21 @@ shade_kernel_sdf(const uint32_t n_elements,
         } break;
         case ERenderMode::Shade: {
             float skyam = normal.dot(up_dir) * -0.5f + 0.5f;
-            Vector3f suncol =
-                Array3f{255.f / 255.0f, 225.f / 255.0f, 195.f / 255.0f} * 4.f *
-                distances[i];  // Distance encodes shadow occlusion. 0=occluded,
-                               // 1=no shadow
+            Vector3f suncol = Array3f{255.f / 255.0f, 225.f / 255.0f, 195.f / 255.0f} *
+                              4.f * distances[i];  // Distance encodes shadow occlusion.
+                                                   // 0=occluded, 1=no shadow
             const Vector3f skycol =
-                Array3f{195.f / 255.0f, 215.f / 255.0f, 255.f / 255.0f} * 4.f *
-                skyam;
+                Array3f{195.f / 255.0f, 215.f / 255.0f, 255.f / 255.0f} * 4.f * skyam;
             float check_size = 8.f / aabb.diag().x();
-            float check =
-                ((int(floorf(check_size * (pos.x() - aabb.min.x()))) ^
-                  int(floorf(check_size * (pos.z() - aabb.min.z())))) &
-                 1)
-                    ? 0.8f
-                    : 0.2f;
+            float check = ((int(floorf(check_size * (pos.x() - aabb.min.x()))) ^
+                            int(floorf(check_size * (pos.z() - aabb.min.z())))) &
+                           1)
+                              ? 0.8f
+                              : 0.2f;
             const Vector3f floorcol =
                 Array3f{check * check * check, check * check, check};
             Vector3f col = evaluate_shading(
-                floor ? floorcol
-                      : brdf.basecolor.array() * brdf.basecolor.array(),
+                floor ? floorcol : brdf.basecolor.array() * brdf.basecolor.array(),
                 brdf.ambientcolor.array() * skycol.array(),
                 suncol,
                 floor ? 0.f : brdf.metallic,
@@ -434,8 +426,7 @@ shade_kernel_sdf(const uint32_t n_elements,
             // Hack to make normals look nicer: treat them as sRGB valued and
             // map that to linear. Gives a more perceptually uniform appearance
             // (assuming sRGB is roughly perceptual).
-            color =
-                srgb_to_linear(0.5f * normal.array() + Array3f::Constant(0.5f));
+            color = srgb_to_linear(0.5f * normal.array() + Array3f::Constant(0.5f));
         } break;
         case ERenderMode::Cost: {
             float col = (float)payload.n_steps / 30;
@@ -534,13 +525,12 @@ compact_kernel_sdf(const uint32_t n_elements,
 }
 
 __global__ void
-uniform_octree_sample_kernel(
-    const uint32_t num_elements,
-    default_rng_t rng,
-    const TriangleOctreeNode* __restrict__ octree_nodes,
-    uint32_t num_nodes,
-    uint32_t depth,
-    Vector3f* __restrict__ samples) {
+uniform_octree_sample_kernel(const uint32_t num_elements,
+                             default_rng_t rng,
+                             const TriangleOctreeNode* __restrict__ octree_nodes,
+                             uint32_t num_nodes,
+                             uint32_t depth,
+                             Vector3f* __restrict__ samples) {
     uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_elements) return;
 
@@ -589,8 +579,8 @@ compare_signs_kernel(uint32_t n_elements,
     bool inside2 = distances_model[i] <= 0.f;
     if (octree_nodes &&
         !TriangleOctree::contains(octree_nodes, max_depth, positions[i])) {
-        inside2 = inside1;  // assume, when using the octree, that the model is
-                            // always correct outside the octree.
+        inside2 = inside1;           // assume, when using the octree, that the model is
+                                     // always correct outside the octree.
         atomicAdd(&counters[6], 1);  // outside the octree
     } else {
         atomicAdd(&counters[7], 1);  // inside the octree
@@ -602,9 +592,7 @@ compare_signs_kernel(uint32_t n_elements,
 }
 
 __global__ void
-scale_iou_counters_kernel(uint32_t n_elements,
-                          uint32_t* counters,
-                          float scale) {
+scale_iou_counters_kernel(uint32_t n_elements, uint32_t* counters, float scale) {
     uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= n_elements) return;
 
@@ -678,11 +666,9 @@ init_rays_with_payload_kernel_sdf(
     float t = max(aabb.ray_intersect(ray.o, ray.d).x(), 0.0f);
     ray.o = ray.o + (t + 1e-6f) * ray.d;
 
-    if (octree_nodes &&
-        !TriangleOctree::contains(octree_nodes, max_depth, ray.o)) {
+    if (octree_nodes && !TriangleOctree::contains(octree_nodes, max_depth, ray.o)) {
         t = max(0.0f,
-                TriangleOctree::ray_intersect(
-                    octree_nodes, max_depth, ray.o, ray.d));
+                TriangleOctree::ray_intersect(octree_nodes, max_depth, ray.o, ray.d));
         if (ray.o.y() > floor_y && ray.d.y() < 0.f) {
             float floor_dist = -(ray.o.y() - floor_y) / ray.d.y();
             if (floor_dist > 0.f) {
@@ -713,9 +699,7 @@ init_rays_with_payload_kernel_sdf(
 }
 
 __host__ __device__ uint32_t
-sample_discrete(float uniform_sample,
-                const float* __restrict__ cdf,
-                int length) {
+sample_discrete(float uniform_sample, const float* __restrict__ cdf, int length) {
     return binary_search(uniform_sample, cdf, length);
 }
 
@@ -731,27 +715,25 @@ sample_uniform_on_triangle_kernel(uint32_t n_elements,
     Vector3f sample = sampled_positions[i];
     uint32_t tri_idx = sample_discrete(sample.x(), cdf, length);
 
-    sampled_positions[i] =
-        triangles[tri_idx].sample_uniform_position(sample.tail<2>());
+    sampled_positions[i] = triangles[tri_idx].sample_uniform_position(sample.tail<2>());
 }
 
 void
-Testbed::SphereTracer::init_rays_from_camera(
-    uint32_t spp,
-    const Vector2i& resolution,
-    const Vector2f& focal_length,
-    const Matrix<float, 3, 4>& camera_matrix,
-    const Vector2f& screen_center,
-    bool snap_to_pixel_centers,
-    const BoundingBox& aabb,
-    float floor_y,
-    float plane_z,
-    float dof,
-    const float* envmap_data,
-    const Vector2i& envmap_resolution,
-    Array4f* frame_buffer,
-    const TriangleOctree* octree,
-    cudaStream_t stream) {
+Testbed::SphereTracer::init_rays_from_camera(uint32_t spp,
+                                             const Vector2i& resolution,
+                                             const Vector2f& focal_length,
+                                             const Matrix<float, 3, 4>& camera_matrix,
+                                             const Vector2f& screen_center,
+                                             bool snap_to_pixel_centers,
+                                             const BoundingBox& aabb,
+                                             float floor_y,
+                                             float plane_z,
+                                             float dof,
+                                             const float* envmap_data,
+                                             const Vector2i& envmap_resolution,
+                                             Array4f* frame_buffer,
+                                             const TriangleOctree* octree,
+                                             cudaStream_t stream) {
     // Make sure we have enough memory reserved to render at the requested
     // resolution
     size_t n_pixels = (size_t)resolution.x() * resolution.y();
@@ -811,11 +793,8 @@ Testbed::SphereTracer::trace_bvh(TriangleBvh* bvh,
                          normals[i] = payloads[i].dir;
                      });
 
-    bvh->ray_trace_gpu(n_alive,
-                       m_rays[0].pos.data(),
-                       m_rays[0].normal.data(),
-                       triangles,
-                       stream);
+    bvh->ray_trace_gpu(
+        n_alive, m_rays[0].pos.data(), m_rays[0].normal.data(), triangles, stream);
     return n_alive;
 }
 
@@ -852,8 +831,8 @@ Testbed::SphereTracer::trace(const distance_fun_t& distance_function,
 
         // Compact rays that did not diverge yet
         {
-            CUDA_CHECK_THROW(cudaMemsetAsync(
-                m_alive_counter.data(), 0, sizeof(uint32_t), stream));
+            CUDA_CHECK_THROW(
+                cudaMemsetAsync(m_alive_counter.data(), 0, sizeof(uint32_t), stream));
             if (m_trace_shadow_rays) {
                 linear_kernel(compact_kernel_shadow_sdf,
                               0,
@@ -913,8 +892,7 @@ Testbed::SphereTracer::trace(const distance_fun_t& distance_function,
         }
 
         for (uint32_t j = 0; j < step_size; ++j) {
-            distance_function(
-                n_alive, rays_current.pos, rays_current.distance, stream);
+            distance_function(n_alive, rays_current.pos, rays_current.distance, stream);
             linear_kernel(
                 advance_pos_kernel_sdf,
                 0,
@@ -931,12 +909,9 @@ Testbed::SphereTracer::trace(const distance_fun_t& distance_function,
                 distance_scale,
                 maximum_distance,
                 m_shadow_sharpness,
-                m_trace_shadow_rays ? rays_current.prev_distance.data()
-                                    : nullptr,
-                m_trace_shadow_rays ? rays_current.total_distance.data()
-                                    : nullptr,
-                m_trace_shadow_rays ? rays_current.min_visibility.data()
-                                    : nullptr);
+                m_trace_shadow_rays ? rays_current.prev_distance.data() : nullptr,
+                m_trace_shadow_rays ? rays_current.total_distance.data() : nullptr,
+                m_trace_shadow_rays ? rays_current.min_visibility.data() : nullptr);
         }
 
         i += step_size;
@@ -954,8 +929,7 @@ Testbed::SphereTracer::trace(const distance_fun_t& distance_function,
 
 void
 Testbed::SphereTracer::enlarge(size_t n_elements) {
-    n_elements =
-        next_multiple(n_elements, size_t(tcnn::batch_size_granularity));
+    n_elements = next_multiple(n_elements, size_t(tcnn::batch_size_granularity));
     m_rays[0].enlarge(n_elements);
     m_rays[1].enlarge(n_elements);
     m_rays_hit.enlarge(n_elements);
@@ -1095,8 +1069,7 @@ Testbed::render_sdf(const distance_fun_t& distance_function,
                     (float*)rays_hit.normal.data());
         } else {
             // Store colors in the normal buffer
-            uint32_t n_elements =
-                next_multiple(n_hit, tcnn::batch_size_granularity);
+            uint32_t n_elements = next_multiple(n_hit, tcnn::batch_size_granularity);
 
             GPUMatrix<float> positions_matrix(
                 (float*)rays_hit.pos.data(), 3, n_elements);
@@ -1114,8 +1087,7 @@ Testbed::render_sdf(const distance_fun_t& distance_function,
         (m_visualized_dimension > -1 || m_render_mode == ERenderMode::Slice)
             ? ERenderMode::EncodingVis
             : m_render_mode;
-    if (render_mode == ERenderMode::Shade ||
-        render_mode == ERenderMode::Normals) {
+    if (render_mode == ERenderMode::Shade || render_mode == ERenderMode::Normals) {
         if (m_sdf.analytic_normals || gt_raytrace) {
             normals_function(n_hit, rays_hit.pos, rays_hit.normal, stream);
         } else {
@@ -1153,9 +1125,8 @@ Testbed::render_sdf(const distance_fun_t& distance_function,
                           octree_ptr ? octree_ptr->nodes_gpu() : nullptr,
                           octree_ptr ? octree_ptr->depth() : 0);
             uint32_t n_hit_shadow = trace(m_sdf.shadow_tracer);
-            auto& shadow_rays_hit = gt_raytrace
-                                        ? m_sdf.shadow_tracer.rays_init()
-                                        : m_sdf.shadow_tracer.rays_hit();
+            auto& shadow_rays_hit = gt_raytrace ? m_sdf.shadow_tracer.rays_init()
+                                                : m_sdf.shadow_tracer.rays_hit();
 
             linear_kernel(write_shadow_ray_result,
                           0,
@@ -1172,13 +1143,10 @@ Testbed::render_sdf(const distance_fun_t& distance_function,
     } else if (render_mode == ERenderMode::EncodingVis &&
                m_render_mode != ERenderMode::Slice) {
         // HACK: Store colors temporarily in the normal buffer
-        uint32_t n_elements =
-            next_multiple(n_hit, tcnn::batch_size_granularity);
+        uint32_t n_elements = next_multiple(n_hit, tcnn::batch_size_granularity);
 
-        GPUMatrix<float> positions_matrix(
-            (float*)rays_hit.pos.data(), 3, n_elements);
-        GPUMatrix<float> colors_matrix(
-            (float*)rays_hit.normal.data(), 3, n_elements);
+        GPUMatrix<float> positions_matrix((float*)rays_hit.pos.data(), 3, n_elements);
+        GPUMatrix<float> colors_matrix((float*)rays_hit.normal.data(), 3, n_elements);
         m_network->visualize_activation(stream,
                                         m_visualized_layer,
                                         m_visualized_dimension,
@@ -1218,8 +1186,7 @@ Testbed::render_sdf(const distance_fun_t& distance_function,
 void
 Testbed::load_mesh() {
     if (!equals_case_insensitive(m_data_path.extension(), "obj")) {
-        throw std::runtime_error{
-            "Sdf data path must be a mesh in .obj format."};
+        throw std::runtime_error{"Sdf data path must be a mesh in .obj format."};
     }
 
     // The expected format is
@@ -1229,8 +1196,7 @@ Testbed::load_mesh() {
     size_t n_triangles = n_vertices / 3;
 
     m_raw_aabb.min = Vector3f::Constant(std::numeric_limits<float>::infinity());
-    m_raw_aabb.max =
-        Vector3f::Constant(-std::numeric_limits<float>::infinity());
+    m_raw_aabb.max = Vector3f::Constant(-std::numeric_limits<float>::infinity());
     for (size_t i = 0; i < n_vertices; ++i) {
         m_raw_aabb.enlarge(vertices[i]);
     }
@@ -1243,18 +1209,16 @@ Testbed::load_mesh() {
     // This way, none of the constants need to carry around
     // bounding box factors.
     for (size_t i = 0; i < n_vertices; ++i) {
-        vertices[i] =
-            (vertices[i] - m_raw_aabb.min - 0.5f * m_raw_aabb.diag()) /
-                m_sdf.mesh_scale +
-            Vector3f::Constant(0.5f);
+        vertices[i] = (vertices[i] - m_raw_aabb.min - 0.5f * m_raw_aabb.diag()) /
+                          m_sdf.mesh_scale +
+                      Vector3f::Constant(0.5f);
     }
 
     m_aabb = {};
     for (size_t i = 0; i < n_vertices; ++i) {
         m_aabb.enlarge(vertices[i]);
     }
-    m_aabb =
-        m_aabb.intersection(BoundingBox{Vector3f::Zero(), Vector3f::Ones()});
+    m_aabb = m_aabb.intersection(BoundingBox{Vector3f::Zero(), Vector3f::Ones()});
     m_render_aabb = m_aabb;
     m_mesh.thresh = 0.f;
 
@@ -1284,8 +1248,7 @@ Testbed::load_mesh() {
     m_sdf.triangle_distribution.build(m_sdf.triangle_weights);
 
     // Move CDF to gpu
-    m_sdf.triangle_cdf.resize_and_copy_from_host(
-        m_sdf.triangle_distribution.cdf);
+    m_sdf.triangle_cdf.resize_and_copy_from_host(m_sdf.triangle_distribution.cdf);
 
     // Clear training data as it's no longer representative
     // of the previously loaded mesh... but don't clear the network.
@@ -1316,8 +1279,7 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
 
     // Generate uniform 3D samples. Some of these will be transformed to cover
     // the surfaces uniformly. Others will be left as-is.
-    generate_random_uniform<float>(
-        stream, m_rng, n_to_generate * 3, (float*)positions);
+    generate_random_uniform<float>(stream, m_rng, n_to_generate * 3, (float*)positions);
 
     linear_kernel(sample_uniform_on_triangle_kernel,
                   0,
@@ -1336,10 +1298,8 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
     // Otherwise, at least confine uniform samples to the AABB.
     // (For the uniform_only case, we always use the AABB, then the IoU kernel
     // checks against the octree later)
-    float stddev =
-        m_bounding_radius / 1024.0f * m_sdf.training.surface_offset_scale;
-    if (!uniform_only &&
-        (m_sdf.uses_takikawa_encoding || m_sdf.use_triangle_octree)) {
+    float stddev = m_bounding_radius / 1024.0f * m_sdf.training.surface_offset_scale;
+    if (!uniform_only && (m_sdf.uses_takikawa_encoding || m_sdf.use_triangle_octree)) {
         linear_kernel(uniform_octree_sample_kernel,
                       0,
                       stream,
@@ -1414,9 +1374,7 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
 }
 
 void
-Testbed::train_sdf(size_t target_batch_size,
-                   size_t n_steps,
-                   cudaStream_t stream) {
+Testbed::train_sdf(size_t target_batch_size, size_t n_steps, cudaStream_t stream) {
     const uint32_t n_output_dims = 1;
     const uint32_t n_input_dims = 3;
 
@@ -1452,8 +1410,7 @@ Testbed::train_sdf(size_t target_batch_size,
         for (size_t i = 0; i < n_steps; i += GRAPH_SIZE) {
             float loss_value;
             for (uint32_t j = 0; j < GRAPH_SIZE; ++j) {
-                uint32_t training_offset =
-                    (uint32_t)((i + j) % n_batches) * batch_size;
+                uint32_t training_offset = (uint32_t)((i + j) % n_batches) * batch_size;
 
                 GPUMatrix<float> training_target_matrix(
                     m_sdf.training.distances_shuffled.data() + training_offset,
@@ -1466,10 +1423,8 @@ Testbed::train_sdf(size_t target_batch_size,
                     batch_size);
 
                 float* p_loss = j == (GRAPH_SIZE - 1) ? &loss_value : nullptr;
-                m_trainer->training_step(stream,
-                                         training_batch_matrix,
-                                         training_target_matrix,
-                                         p_loss);
+                m_trainer->training_step(
+                    stream, training_batch_matrix, training_target_matrix, p_loss);
 
                 if (p_loss) {
                     total_loss += loss_value;
@@ -1518,10 +1473,7 @@ Testbed::calculate_iou(uint32_t n_samples,
     m_sdf.iou_counter.enlarge(8);
     if (!blocking)  // when not blocking, returns data from the *last* run, then
                     // kicks off work to accumulate some more samples
-        cudaMemcpy(countercpu,
-                   m_sdf.iou_counter.data(),
-                   8 * 4,
-                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(countercpu, m_sdf.iou_counter.data(), 8 * 4, cudaMemcpyDeviceToHost);
 
     if (scale_existing_results_factor < 1.f) {
         linear_kernel(scale_iou_counters_kernel,
@@ -1552,8 +1504,8 @@ Testbed::calculate_iou(uint32_t n_samples,
         GPUMatrix<float> distances_matrix(
             m_sdf.training.distances_shuffled.data(), 1, batch_size);
         m_network->inference(stream, positions_matrix, distances_matrix);
-        auto* octree_ptr = (m_sdf.uses_takikawa_encoding ||
-                            m_sdf.use_triangle_octree || force_use_octree)
+        auto* octree_ptr = (m_sdf.uses_takikawa_encoding || m_sdf.use_triangle_octree ||
+                            force_use_octree)
                                ? m_sdf.triangle_octree.get()
                                : nullptr;
         linear_kernel(compare_signs_kernel,

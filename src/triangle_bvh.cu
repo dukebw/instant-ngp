@@ -103,8 +103,7 @@ class Gas {
 
         triangle_input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
         triangle_input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-        triangle_input.triangleArray.numVertices =
-            (uint32_t)triangles.size() * 3;
+        triangle_input.triangleArray.numVertices = (uint32_t)triangles.size() * 3;
         triangle_input.triangleArray.vertexBuffers = &d_triangles;
         triangle_input.triangleArray.flags = triangle_input_flags;
         triangle_input.triangleArray.numSbtRecords = 1;
@@ -148,21 +147,19 @@ class Gas {
 #endif  // NGP_OPTIX
 
 __global__ void
-signed_distance_watertight_kernel(
-    uint32_t n_elements,
-    const Vector3f* __restrict__ positions,
-    const TriangleBvhNode* __restrict__ bvhnodes,
-    const Triangle* __restrict__ triangles,
-    float* __restrict__ distances,
-    bool use_existing_distances_as_upper_bounds = false);
+signed_distance_watertight_kernel(uint32_t n_elements,
+                                  const Vector3f* __restrict__ positions,
+                                  const TriangleBvhNode* __restrict__ bvhnodes,
+                                  const Triangle* __restrict__ triangles,
+                                  float* __restrict__ distances,
+                                  bool use_existing_distances_as_upper_bounds = false);
 __global__ void
-signed_distance_raystab_kernel(
-    uint32_t n_elements,
-    const Vector3f* __restrict__ positions,
-    const TriangleBvhNode* __restrict__ bvhnodes,
-    const Triangle* __restrict__ triangles,
-    float* __restrict__ distances,
-    bool use_existing_distances_as_upper_bounds = false);
+signed_distance_raystab_kernel(uint32_t n_elements,
+                               const Vector3f* __restrict__ positions,
+                               const TriangleBvhNode* __restrict__ bvhnodes,
+                               const Triangle* __restrict__ triangles,
+                               float* __restrict__ distances,
+                               bool use_existing_distances_as_upper_bounds = false);
 __global__ void
 unsigned_distance_kernel(uint32_t n_elements,
                          const Vector3f* __restrict__ positions,
@@ -384,9 +381,8 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
 
                 NGP_PRAGMA_UNROLL
                 for (uint32_t i = 0; i < BRANCHING_FACTOR; ++i) {
-                    children[i] = {
-                        bvhnodes[i + first_child].bb.distance_sq(point),
-                        i + first_child};
+                    children[i] = {bvhnodes[i + first_child].bb.distance_sq(point),
+                                   i + first_child};
                 }
 
                 sorting_network<BRANCHING_FACTOR>(children);
@@ -442,8 +438,7 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
 
                 NGP_PRAGMA_UNROLL
                 for (uint32_t i = 0; i < BRANCHING_FACTOR; ++i) {
-                    if (bvhnodes[i + first_child].bb.distance_sq(point) <
-                        EPSILON) {
+                    if (bvhnodes[i + first_child].bb.distance_sq(point) < EPSILON) {
                         query_stack.push(i + first_child);
                     }
                 }
@@ -458,8 +453,7 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                       const TriangleBvhNode* __restrict__ bvhnodes,
                       const Triangle* __restrict__ triangles,
                       float max_distance_sq = MAX_DIST_SQ) {
-        return closest_triangle(point, bvhnodes, triangles, max_distance_sq)
-            .second;
+        return closest_triangle(point, bvhnodes, triangles, max_distance_sq).second;
     }
 
     __host__ __device__ static float
@@ -483,8 +477,7 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                             const Triangle* __restrict__ triangles,
                             float max_distance_sq = MAX_DIST_SQ,
                             default_rng_t rng = {}) {
-        float distance =
-            unsigned_distance(point, bvhnodes, triangles, max_distance_sq);
+        float distance = unsigned_distance(point, bvhnodes, triangles, max_distance_sq);
 
         Vector2f offset = random_val_2d(rng);
 
@@ -517,11 +510,9 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                     const Vector3f& point,
                     const std::vector<Triangle>& triangles) const {
         if (mode == EMeshSdfMode::Watertight) {
-            return signed_distance_watertight(
-                point, m_nodes.data(), triangles.data());
+            return signed_distance_watertight(point, m_nodes.data(), triangles.data());
         } else {
-            return signed_distance_raystab(
-                point, m_nodes.data(), triangles.data());
+            return signed_distance_raystab(point, m_nodes.data(), triangles.data());
         }
     }
 
@@ -599,12 +590,10 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                   cudaStream_t stream) override {
 #ifdef NGP_OPTIX
         if (m_optix.available) {
-            m_optix.raytrace->invoke({gpu_positions,
-                                      gpu_directions,
-                                      gpu_triangles,
-                                      m_optix.gas->handle()},
-                                     {n_elements, 1, 1},
-                                     stream);
+            m_optix.raytrace->invoke(
+                {gpu_positions, gpu_directions, gpu_triangles, m_optix.gas->handle()},
+                {n_elements, 1, 1},
+                stream);
         } else
 #endif  // NGP_OPTIX
         {
@@ -655,14 +644,12 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
     }
 
     void
-    build(std::vector<Triangle>& triangles,
-          uint32_t n_primitives_per_leaf) override {
+    build(std::vector<Triangle>& triangles, uint32_t n_primitives_per_leaf) override {
         m_nodes.clear();
 
         // Root
         m_nodes.emplace_back();
-        m_nodes.front().bb =
-            BoundingBox(std::begin(triangles), std::end(triangles));
+        m_nodes.front().bb = BoundingBox(std::begin(triangles), std::end(triangles));
 
         struct BuildNode {
             int node_idx;
@@ -706,15 +693,14 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                     Vector3f::Index axis;
                     var.maxCoeff(&axis);
 
-                    auto m =
-                        child.begin + std::distance(child.begin, child.end) / 2;
-                    std::nth_element(
-                        child.begin,
-                        m,
-                        child.end,
-                        [&](const Triangle& tri1, const Triangle& tri2) {
-                            return tri1.centroid(axis) < tri2.centroid(axis);
-                        });
+                    auto m = child.begin + std::distance(child.begin, child.end) / 2;
+                    std::nth_element(child.begin,
+                                     m,
+                                     child.end,
+                                     [&](const Triangle& tri1, const Triangle& tri2) {
+                                         return tri1.centroid(axis) <
+                                                tri2.centroid(axis);
+                                     });
 
                     children[i * 2].begin = children[i].begin;
                     children[i * 2 + 1].end = children[i].end;
@@ -734,15 +720,11 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                 m_nodes.emplace_back();
                 m_nodes.back().bb = BoundingBox(child.begin, child.end);
 
-                if (std::distance(child.begin, child.end) <=
-                    n_primitives_per_leaf) {
+                if (std::distance(child.begin, child.end) <= n_primitives_per_leaf) {
                     m_nodes.back().left_idx =
-                        -(int)std::distance(std::begin(triangles),
-                                            child.begin) -
-                        1;
+                        -(int)std::distance(std::begin(triangles), child.begin) - 1;
                     m_nodes.back().right_idx =
-                        -(int)std::distance(std::begin(triangles), child.end) -
-                        1;
+                        -(int)std::distance(std::begin(triangles), child.end) - 1;
                 } else {
                     build_stack.push(child);
                 }
@@ -756,13 +738,11 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
     }
 
     void
-    build_optix(const GPUMemory<Triangle>& triangles,
-                cudaStream_t stream) override {
+    build_optix(const GPUMemory<Triangle>& triangles, cudaStream_t stream) override {
 #ifdef NGP_OPTIX
         m_optix.available = optix::initialize();
         if (m_optix.available) {
-            m_optix.gas =
-                std::make_unique<optix::Gas>(triangles, g_optix, stream);
+            m_optix.gas = std::make_unique<optix::Gas>(triangles, g_optix, stream);
             m_optix.raystab = std::make_unique<optix::Program<Raystab>>(
                 (const char*)optix_ptx::raystab_ptx,
                 sizeof(optix_ptx::raystab_ptx),
@@ -777,8 +757,7 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                 g_optix);
             tlog::success() << "Built OptiX GAS and shaders";
         } else {
-            tlog::warning()
-                << "Falling back to slower TriangleBVH::ray_intersect.";
+            tlog::warning() << "Falling back to slower TriangleBVH::ray_intersect.";
         }
 #else   // NGP_OPTIX
         tlog::warning() << "OptiX was not built. Falling back to slower "
