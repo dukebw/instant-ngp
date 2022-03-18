@@ -29,7 +29,7 @@ otherwise I got an error about `GLIB_CXX_3.4.29` not found.
 - This excellent post explains a bit about building a custom libstdc++:
   https://stackoverflow.com/a/51946224/8581647
 
-- This post explains hwo to build GCC from source:
+- This post explains how to build GCC from source:
   https://stackoverflow.com/a/10662297/8581647
 
 - I had to symlink gcc and g++ to the CUDA installation in order for nvcc to
