@@ -6,10 +6,10 @@ Originally based on scripts/run.py.
 import json
 import logging
 import os
-from pathlib import Path
 
 import click
 import numpy as np
+import open3d as o3d
 
 # TODO(brendan): pyngp depends on common being imported first to set up PATH
 import common
@@ -24,17 +24,67 @@ def cli():
 
 
 @cli.command()
-def mesh_from_saved():
+@click.option(
+    "--aabb-min",
+    nargs=3,
+    type=click.Tuple([float, float, float]),
+    default=None,
+    help="Min values for crop AABB",
+)
+@click.option(
+    "--aabb-max",
+    nargs=3,
+    type=click.Tuple([float, float, float]),
+    default=None,
+    help="Min values for crop AABB",
+)
+@click.option(
+    "--density-threshold",
+    type=float,
+    default=2.5,
+    help="""Density threshold""",
+)
+@click.option(
+    "--marching-cubes-resolution",
+    type=int,
+    default=256,
+    help="""Voxel grid resolution for marching cubes""",
+)
+@click.option(
+    "--model-snapshot-path",
+    type=str,
+    default=None,
+    help="""Path to load trained NeRF model from""",
+)
+def mesh_from_saved(
+    aabb_min: click.Tuple,
+    aabb_max: click.Tuple,
+    density_threshold: float,
+    marching_cubes_resolution: int,
+    model_snapshot_path: str,
+):
     """Mesh from a saved model"""
     # TODO(brendan):
-    # 1. load saved model
-    # 2. extract vertices of marching cubes mesh using
-    #    testbed.compute_marching_cubes_mesh
     # 3. point cloud denoising
     # 4. import the transforms.json from colmap to get camera locations, then
     #    use open3D hidden_point_removal
     # 4. PSR
     # 5. marching cubes
+    testbed = ngp.Testbed(ngp.TestbedMode.Nerf)
+    testbed.load_snapshot(model_snapshot_path)
+
+    testbed.render_aabb.min = aabb_min
+    testbed.render_aabb.max = aabb_max
+    computed_mesh = testbed.compute_marching_cubes_mesh(
+        resolution=np.array(3 * [marching_cubes_resolution]), thresh=density_threshold
+    )
+
+    point_cloud = o3d.geometry.PointCloud()
+    point_cloud.colors = o3d.utility.Vector3dVector(computed_mesh["C"])
+    point_cloud.normals = o3d.utility.Vector3dVector(computed_mesh["N"])
+    point_cloud.points = o3d.utility.Vector3dVector(computed_mesh["V"])
+
+    o3d.visualization.draw_geometries([point_cloud])
 
 
 @cli.command()
@@ -52,6 +102,12 @@ def mesh_from_saved():
          Output path for a marching-cubes based mesh from the NeRF or SDF model.
          Supports OBJ and PLY format
          """,
+)
+@click.option(
+    "--model-snapshot-save-path",
+    type=str,
+    default=None,
+    help="""Path at which to save the trained NeRF model""",
 )
 @click.option(
     "--n-interpolation",
@@ -120,6 +176,7 @@ def mesh_from_saved():
 def mesh(
     marching_cubes_res: int,
     mesh_output_path: str,
+    model_snapshot_save_path: str,
     n_interpolation: int,
     n_steps: int,
     render_aabb_min: click.Tuple,
@@ -163,6 +220,10 @@ def mesh(
             progress_bar.set_postfix(loss=testbed.loss)
             previous_training_step = testbed.training_step
 
+    if model_snapshot_save_path is not None:
+        logging.info(f"Saving snapshot {model_snapshot_save_path}")
+        testbed.save_snapshot(model_snapshot_save_path, False)
+
     if mesh_output_path is not None:
         os.makedirs(os.path.dirname(mesh_output_path), exist_ok=True)
         testbed.compute_and_save_marching_cubes_mesh(
@@ -202,15 +263,6 @@ def mesh(
                     shutter_fraction=0.5,
                 )
                 write_image(outname, image)
-    else:
-        outname = os.path.join(screenshot_dir, Path(base_network_path).stem)
-        logging.info(f"Rendering {outname}.png")
-        image = testbed.render(
-            screenshot_width, screenshot_height, screenshot_spp, True
-        )
-
-        os.makedirs(os.path.dirname(outname), exist_ok=True)
-        write_image(f"{outname}.png", image)
 
 
 if __name__ == "__main__":
