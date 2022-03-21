@@ -39,6 +39,17 @@ def cli():
     help="Min values for crop AABB",
 )
 @click.option(
+    "--camera-transforms",
+    type=str,
+    default=None,
+    help="""
+         Path to a NeRF style transforms.json used to determine visibility of
+         points.
+         The format is expected to be that of camera paths saved from the
+         testbed GUI.
+         """,
+)
+@click.option(
     "--density-threshold",
     type=float,
     default=2.5,
@@ -56,18 +67,24 @@ def cli():
     default=None,
     help="""Path to load trained NeRF model from""",
 )
+@click.option(
+    "--spherical-projection-radius",
+    type=float,
+    default=100.0,
+    help="""Radius for spherical projection for hidden point removal""",
+)
 def mesh_from_saved(
     aabb_min: click.Tuple,
     aabb_max: click.Tuple,
+    camera_transforms: str,
     density_threshold: float,
     marching_cubes_resolution: int,
     model_snapshot_path: str,
+    spherical_projection_radius: float,
 ):
     """Mesh from a saved model"""
     # TODO(brendan):
-    # 3. point cloud denoising
-    # 4. import the transforms.json from colmap to get camera locations, then
-    #    use open3D hidden_point_removal
+    # 3. point cloud denoising (outlier removal)
     # 4. PSR
     # 5. marching cubes
     testbed = ngp.Testbed(ngp.TestbedMode.Nerf)
@@ -84,7 +101,19 @@ def mesh_from_saved(
     point_cloud.normals = o3d.utility.Vector3dVector(computed_mesh["N"])
     point_cloud.points = o3d.utility.Vector3dVector(computed_mesh["V"])
 
-    o3d.visualization.draw_geometries([point_cloud])
+    with open(camera_transforms, "r", encoding="utf-8") as filestream:
+        camera_path = json.load(filestream)["path"]
+
+    visible_point_indices = []
+    for transform in camera_path:
+        translation = transform["T"]
+        _, vis_indices = point_cloud.hidden_point_removal(
+            translation, spherical_projection_radius * translation[-1]
+        )
+        visible_point_indices = visible_point_indices + vis_indices
+
+    visible_points = point_cloud.select_by_index(visible_point_indices)
+    o3d.visualization.draw_geometries([visible_points])
 
 
 @cli.command()
