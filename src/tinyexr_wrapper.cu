@@ -97,8 +97,7 @@ save_exr(const float* data,
     header.num_channels = nChannels;
     header.channels =
         (EXRChannelInfo*)malloc(sizeof(EXRChannelInfo) * header.num_channels);
-    // Must be (A)BGR order, since most of EXR viewers expect this channel
-    // order.
+    // Must be (A)BGR order, since most of EXR viewers expect this channel order.
     strncpy(header.channels[0].name, "B", 255);
     header.channels[0].name[strlen("B")] = '\0';
     strncpy(header.channels[1].name, "G", 255);
@@ -115,8 +114,7 @@ save_exr(const float* data,
     for (int i = 0; i < header.num_channels; i++) {
         header.pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT;  // pixel type of input image
         header.requested_pixel_types[i] =
-            TINYEXR_PIXELTYPE_HALF;  // pixel type of output image to be stored
-                                     // in .EXR
+            TINYEXR_PIXELTYPE_HALF;  // pixel type of output image to be stored in .EXR
     }
 
     const char* err = NULL;  // or nullptr in C++11 or later.

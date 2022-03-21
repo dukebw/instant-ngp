@@ -11,8 +11,8 @@
 /** @file   takikawa_encoding.cuh
  *  @author Thomas Müller, NVIDIA
  *  @brief  An implementation of an encoding similar to the one described in
- *          Neural Geometric Level of Detail: Real-time Rendering with Implicit
- * 3D Shapes by T. Takakawa et al.
+ *          Neural Geometric Level of Detail: Real-time Rendering with Implicit 3D
+ * Shapes by T. Takakawa et al.
  */
 
 #pragma once
@@ -294,9 +294,9 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
     // we can make use the efficient atomicAdd(half2) function.
     using grad_t = std::conditional_t<N_FEATURES_PER_LEVEL == 1, float, T>;
 #else
-    // atomicAdd(__half2) is only supported with compute capability 60 and
-    // above. Since atomicAdd(__half) is relatively slow / doesn't exist for low
-    // compute capabilities, accumulate in fp32 instead.
+    // atomicAdd(__half2) is only supported with compute capability 60 and above.
+    // Since atomicAdd(__half) is relatively slow / doesn't exist for low compute
+    // capabilities, accumulate in fp32 instead.
     using grad_t = float;
 #endif
 
@@ -381,9 +381,9 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
         const auto& forward = dynamic_cast<const ForwardContext&>(ctx);
 
         if (param_gradients_mode != tcnn::EGradientMode::Ignore) {
-            // We accumulate gradients with grad_t precision, which, for
-            // performance reasons, is not always T. If not, accumulate in a
-            // temporary buffer and cast later.
+            // We accumulate gradients with grad_t precision, which, for performance
+            // reasons, is not always T. If not, accumulate in a temporary buffer and
+            // cast later.
             grad_t* params_gradient;
             if (!std::is_same<grad_t, T>::value) {
                 params_gradient = (grad_t*)m_params_gradient_tmp.data();
@@ -456,8 +456,8 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
     set_alignment(uint32_t alignment) override {
         if (m_n_output_dims != tcnn::next_multiple(m_n_output_dims, alignment)) {
             throw std::runtime_error{
-                std::string{"TakikawaEncoding only supports number of output "
-                            "dims that divide into "} +
+                std::string{"TakikawaEncoding only supports number of output dims that "
+                            "divide into "} +
                 std::to_string(alignment) + "; n_n_output_dims is " +
                 std::to_string(m_n_output_dims)};
         }
@@ -488,8 +488,8 @@ class TakikawaEncoding : public tcnn::Encoding<T> {
                       float scale = 1) override {
         set_params(params, inference_params, backward_params, gradients);
 
-        // Initialize the encoding from the GPU, because the number of
-        // parameters can be quite large.
+        // Initialize the encoding from the GPU, because the number of parameters can be
+        // quite large.
         tcnn::generate_random_uniform<float>(
             rnd, n_params(), params_full_precision, -1e-4f, 1e-4f);
     }

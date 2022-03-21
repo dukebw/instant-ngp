@@ -61,9 +61,9 @@ class Program {
             // single pipeline
             pipeline_compile_options.usesMotionBlur = false;
 
-            // This option is important to ensure we compile code which is
-            // optimal for our scene hierarchy. We use a single GAS � no
-            // instancing or multi-level hierarchies
+            // This option is important to ensure we compile code which is optimal
+            // for our scene hierarchy. We use a single GAS � no instancing or
+            // multi-level hierarchies
             pipeline_compile_options.traversableGraphFlags =
                 OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
 

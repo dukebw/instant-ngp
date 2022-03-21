@@ -145,8 +145,8 @@ deposit_image_gradient(const Eigen::Matrix<float, N_DIMS, 1>& value,
         pos.x() = std::max(std::min(pos.x(), resolution.x() - 1), 0);
         pos.y() = std::max(std::min(pos.y(), resolution.y() - 1), 0);
 
-#if TCNN_MIN_GPU_ARCH >= 60  // atomicAdd(__half2) is only supported with
-                             // compute capability 60 and above
+#if TCNN_MIN_GPU_ARCH >= \
+    60  // atomicAdd(__half2) is only supported with compute capability 60 and above
         if (std::is_same<T, __half>::value) {
             for (uint32_t c = 0; c < N_DIMS; c += 2) {
                 atomicAdd(
@@ -276,8 +276,8 @@ f_theta_undistortion(const Eigen::Vector2f& uv,
                      const Eigen::Vector2f& screen_center,
                      const CameraDistortion& camera_distortion,
                      const Eigen::Vector3f& error_direction) {
-    // we take f_theta intrinsics to be: resx, resy, r0, r1, r2, r3; we rescale
-    // to whatever res the intrinsics specify.
+    // we take f_theta intrinsics to be: resx, resy, r0, r1, r2, r3; we rescale to
+    // whatever res the intrinsics specify.
     float xpix = (uv.x() - screen_center.x()) * camera_distortion.params[5];
     float ypix = (uv.y() - screen_center.y()) * camera_distortion.params[6];
     float norm = sqrtf(xpix * xpix + ypix * ypix);
@@ -317,9 +317,11 @@ pixel_to_ray(uint32_t spp,
         dir = f_theta_undistortion(
             uv, screen_center, camera_distortion, {1000.f, 0.f, 0.f});
         if (dir.x() == 1000.f) {
-            return {{1000.f, 0.f, 0.f},
-                    {0.f, 0.f, 1.f}};  // return a point outside the aabb so the
-                                       // pixel is not rendered
+            return {
+                {1000.f, 0.f, 0.f},
+                {0.f,
+                 0.f,
+                 1.f}};  // return a point outside the aabb so the pixel is not rendered
         }
     } else {
         dir = {(uv.x() - screen_center.x()) * (float)resolution.x() / focal_length.x(),

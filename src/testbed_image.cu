@@ -132,9 +132,8 @@ init_image_coords(Vector2f* __restrict__ positions,
     positions[idx] = uv;
 }
 
-// #define COLOR_SPACE_CONVERT convert to ycrcb experiment - causes some color
-// shift tho it does lead to very slightly sharper edges. not a net win if you
-// like colors :)
+// #define COLOR_SPACE_CONVERT convert to ycrcb experiment - causes some color shift tho
+// it does lead to very slightly sharper edges. not a net win if you like colors :)
 #define CHROMA_SCALE 0.2f
 
 __global__ void
@@ -383,8 +382,7 @@ void
 Testbed::render_image(CudaRenderBuffer& render_buffer, cudaStream_t stream) {
     auto res = render_buffer.resolution();
 
-    // Make sure we have enough memory reserved to render at the requested
-    // resolution
+    // Make sure we have enough memory reserved to render at the requested resolution
     size_t n_pixels = (size_t)res.x() * res.y();
     uint32_t n_elements =
         next_multiple((uint32_t)n_pixels, tcnn::batch_size_granularity);
@@ -561,8 +559,8 @@ Testbed::load_binary_image() {
     // std::to_string(fd) + " status " + status.err};
     // 	}
 
-    // 	status = cuFileBufRegister(m_image.data.data(),
-    // m_image.data.get_bytes(), 0); 	if (status.err != CU_FILE_SUCCESS) {
+    // 	status = cuFileBufRegister(m_image.data.data(), m_image.data.get_bytes(), 0);
+    // 	if (status.err != CU_FILE_SUCCESS) {
     // 		cuFileHandleDeregister(cf_handle);
     // 		close(fd);
     // 		throw std::runtime_error{std::string{"buffer registration failed "} +

@@ -42,8 +42,8 @@ main(int argc, char** argv) {
     ValueFlag<string> mode_flag{
         parser,
         "MODE",
-        "Mode can be 'nerf', 'sdf', or 'image' or 'volume'. Inferred from the "
-        "scene if unspecified.",
+        "Mode can be 'nerf', 'sdf', or 'image' or 'volume'. Inferred from the scene if "
+        "unspecified.",
         {'m', "mode"},
     };
 
@@ -57,8 +57,7 @@ main(int argc, char** argv) {
     Flag no_gui_flag{
         parser,
         "NO_GUI",
-        "Disables the GUI and instead reports training progress on the command "
-        "line.",
+        "Disables the GUI and instead reports training progress on the command line.",
         {"no-gui"},
     };
 
@@ -72,8 +71,8 @@ main(int argc, char** argv) {
     ValueFlag<string> scene_flag{
         parser,
         "SCENE",
-        "The scene to load. Can be NeRF dataset, a *.obj mesh for training a "
-        "SDF, an image, or a *.nvdb volume.",
+        "The scene to load. Can be NeRF dataset, a *.obj mesh for training a SDF, an "
+        "image, or a *.nvdb volume.",
         {'s', "scene"},
     };
 
@@ -162,8 +161,8 @@ main(int argc, char** argv) {
             } else if (equals_case_insensitive(mode_str, "volume")) {
                 mode = ETestbedMode::Volume;
             } else {
-                tlog::error() << "Mode must be one of 'nerf', 'sdf', 'image', "
-                                 "and 'volume'.";
+                tlog::error()
+                    << "Mode must be one of 'nerf', 'sdf', 'image', and 'volume'.";
                 return 1;
             }
         }

@@ -69,8 +69,8 @@ proc_envmap_render(const Vector3f& dir,
                    const Vector3f& up_dir,
                    const Vector3f& sun_dir,
                    const Array3f& skycol) {
-    // Constant background color. Uncomment the following two lines to instead
-    // render the actual sunsky model that we trained from.
+    // Constant background color. Uncomment the following two lines to instead render
+    // the actual sunsky model that we trained from.
     Array4f result = Array4f::Zero();
 
     result = proc_envmap(dir, up_dir, sun_dir, skycol);
@@ -87,11 +87,11 @@ walk_to_next_event(default_rng_t& rng,
                    float scale) {
     while (1) {
         float zeta1 = random_val(rng);  // sample a free flight distance and go there!
-        float dt = -std::log(1.0f - zeta1) *
-                   scale;  // todo - for spatially varying majorant, we must
-                           // check dt against the range over which the majorant
-                           // is defined. we can turn this into an optical
-                           // thickness accumulating loop...
+        float dt =
+            -std::log(1.0f - zeta1) *
+            scale;  // todo - for spatially varying majorant, we must check dt against
+                    // the range over which the majorant is defined. we can turn this
+                    // into an optical thickness accumulating loop...
         pos += dir * dt;
         if (!aabb.contains(pos)) return false;  // escape to the mooon!
         uint32_t bitidx = tcnn::morton3D(int(pos.x() * 128.f + 0.5f),
@@ -105,8 +105,8 @@ walk_to_next_event(default_rng_t& rng,
 }
 
 static constexpr uint32_t MAX_TRAIN_VERTICES =
-    4;  // record the first few real interactions and use as training data. uses
-        // a local array so cant be big.
+    4;  // record the first few real interactions and use as training data. uses a local
+        // array so cant be big.
 
 __global__ void
 volume_generate_training_data_kernel(uint32_t n_elements,

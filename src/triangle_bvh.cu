@@ -487,8 +487,7 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
             // distribute the stab rays over the sphere.
             Vector3f d = fibonacci_dir<N_STAB_RAYS>(i, offset);
 
-            // If any of the stab rays goes outside the mesh, the SDF is
-            // positive.
+            // If any of the stab rays goes outside the mesh, the SDF is positive.
             if (ray_intersect(point, -d, bvhnodes, triangles).first < 0 ||
                 ray_intersect(point, d, bvhnodes, triangles).first < 0) {
                 return distance;
@@ -575,8 +574,8 @@ class TriangleBvhWithBranchingFactor : public TriangleBvh {
                                   use_existing_distances_as_upper_bounds);
                 } else if (mode == EMeshSdfMode::PathEscape) {
                     throw std::runtime_error{
-                        "TriangleBvh: EMeshSdfMode::PathEscape is only "
-                        "supported with OptiX enabled."};
+                        "TriangleBvh: EMeshSdfMode::PathEscape is only supported with "
+                        "OptiX enabled."};
                 }
             }
         }

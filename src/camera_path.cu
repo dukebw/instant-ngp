@@ -85,9 +85,9 @@ to_json(json& j, const CameraKeyframe& p) {
 }
 
 bool load_relative_to_first =
-    false;  // set to true when using a camera path that is aligned with the
-            // first training image, such that it is invariant to changes in the
-            // space of the training data
+    false;  // set to true when using a camera path that is aligned with the first
+            // training image, such that it is invariant to changes in the space of the
+            // training data
 
 void
 from_json(bool is_first,

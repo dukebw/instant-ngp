@@ -53,8 +53,8 @@ ThreadPool::startThreads(size_t num) {
                 function<void()> task{move(mTaskQueue.front())};
                 mTaskQueue.pop_front();
 
-                // Unlock the lock, so we can process the task without blocking
-                // other threads
+                // Unlock the lock, so we can process the task without blocking other
+                // threads
                 lock.unlock();
 
                 task();

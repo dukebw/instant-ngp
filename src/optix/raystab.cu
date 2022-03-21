@@ -63,8 +63,7 @@ __raygen__rg() {
             p0);
 
         if (p0 == 0) {
-            // One ray escaped. We are outside. Distance doesn't need to be
-            // signed.
+            // One ray escaped. We are outside. Distance doesn't need to be signed.
             return;
         }
     }

@@ -43,8 +43,8 @@ class TrainableBuffer : public tcnn::DifferentiableObject<float, T, T> {
                               tcnn::GPUMatrixDynamic<T>& output,
                               bool use_inference_matrices = true) override {
         throw std::runtime_error{
-            "The trainable buffer does not support inference(). Its content is "
-            "meant to be used externally."};
+            "The trainable buffer does not support inference(). Its content is meant "
+            "to be used externally."};
     }
 
     std::unique_ptr<tcnn::Context>
@@ -54,8 +54,8 @@ class TrainableBuffer : public tcnn::DifferentiableObject<float, T, T> {
             bool use_inference_matrices = false,
             bool prepare_input_gradients = false) override {
         throw std::runtime_error{
-            "The trainable buffer does not support forward(). Its content is "
-            "meant to be used externally."};
+            "The trainable buffer does not support forward(). Its content is meant to "
+            "be used externally."};
     }
 
     void
@@ -69,8 +69,8 @@ class TrainableBuffer : public tcnn::DifferentiableObject<float, T, T> {
              tcnn::EGradientMode param_gradients_mode =
                  tcnn::EGradientMode::Overwrite) override {
         throw std::runtime_error{
-            "The trainable buffer does not support backward(). Its content is "
-            "meant to be used externally."};
+            "The trainable buffer does not support backward(). Its content is meant to "
+            "be used externally."};
     }
 
     void

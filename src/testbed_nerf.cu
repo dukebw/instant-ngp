@@ -242,10 +242,9 @@ advance_to_next_voxel(float t,
                       const Vector3f& dir,
                       const Vector3f& idir,
                       uint32_t res) {
-    // Analytic stepping by a multiple of dt. Make empty space unequal to
-    // non-empty space due to the different stepping. float dt = calc_dt(t,
-    // cone_angle); return t + ceilf(fmaxf(distance_to_next_voxel(pos, dir,
-    // idir, res) / dt, 0.5f)) * dt;
+    // Analytic stepping by a multiple of dt. Make empty space unequal to non-empty
+    // space due to the different stepping. float dt = calc_dt(t, cone_angle); return t
+    // + ceilf(fmaxf(distance_to_next_voxel(pos, dir, idir, res) / dt, 0.5f)) * dt;
 
     // Regular stepping (may be slower but matches non-empty space)
     float t_target = t + distance_to_next_voxel(pos, dir, idir, res);
@@ -345,16 +344,16 @@ warp_position(const Vector3f& pos, const BoundingBox& aabb) {
 
 __device__ Vector3f
 unwarp_position(const Vector3f& pos, const BoundingBox& aabb) {
-    // return {logit(pos.x()) + 0.5f, logit(pos.y()) + 0.5f, logit(pos.z()) +
-    // 0.5f}; return pos;
+    // return {logit(pos.x()) + 0.5f, logit(pos.y()) + 0.5f, logit(pos.z()) + 0.5f};
+    // return pos;
 
     return aabb.min + pos.cwiseProduct(aabb.diag());
 }
 
 __device__ Vector3f
 unwarp_position_derivative(const Vector3f& pos, const BoundingBox& aabb) {
-    // return {logit(pos.x()) + 0.5f, logit(pos.y()) + 0.5f, logit(pos.z()) +
-    // 0.5f}; return pos;
+    // return {logit(pos.x()) + 0.5f, logit(pos.y()) + 0.5f, logit(pos.z()) + 0.5f};
+    // return pos;
 
     return aabb.diag();
 }
@@ -499,8 +498,7 @@ mark_untrained_density_grid(const uint32_t n_elements,
         float z = ploc.dot(xform.col(2));
         if (z > 0.f) {
             auto focal = metadata[j].focal_length;
-            // TODO - add a box / plane intersection to stop thomas from
-            // murdering me
+            // TODO - add a box / plane intersection to stop thomas from murdering me
             if (fabsf(x) - voxel_radius < z / focal.x() * half_resx &&
                 fabsf(y) - voxel_radius < z / focal.y() * half_resy) {
                 count++;
@@ -631,16 +629,16 @@ splat_grid_samples_nerf_max_nearest_neighbor(
     uint32_t local_idx = indices[i];
 
     // Current setting: optical thickness of the smallest possible stepsize.
-    // Uncomment for:   optical thickness of the ~expected step size when the
-    // observer is in the middle of the scene
-    uint32_t level = 0;  // local_idx / (NERF_GRIDSIZE() * NERF_GRIDSIZE() *
-                         // NERF_GRIDSIZE());
+    // Uncomment for:   optical thickness of the ~expected step size when the observer
+    // is in the middle of the scene
+    uint32_t level =
+        0;  // local_idx / (NERF_GRIDSIZE() * NERF_GRIDSIZE() * NERF_GRIDSIZE());
 
     float mlp = network_to_density(float(network_output[i]), density_activation);
     float optical_thickness = mlp * scalbnf(MIN_CONE_STEPSIZE(), level);
 
-    // Positive floats are monotonically ordered when their bit pattern is
-    // interpretes as uint. uint atomicMax is thus perfectly acceptable.
+    // Positive floats are monotonically ordered when their bit pattern is interpretes
+    // as uint. uint atomicMax is thus perfectly acceptable.
     atomicMax((uint32_t*)&grid_out[local_idx], __float_as_uint(optical_thickness));
 }
 
@@ -655,10 +653,10 @@ grid_samples_half_to_float(const uint32_t n_elements,
     const uint32_t i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i >= n_elements) return;
 
-    // let's interpolate for marching cubes based on the raw MLP output, not the
-    // density (exponentiated) version
-    // float mlp = network_to_density(float(network_output[i *
-    // padded_output_width]), density_activation);
+    // let's interpolate for marching cubes based on the raw MLP output, not the density
+    // (exponentiated) version
+    // float mlp = network_to_density(float(network_output[i * padded_output_width]),
+    // density_activation);
     float mlp = float(network_output[i]);
 
     if (grid_in) {
@@ -685,12 +683,12 @@ ema_grid_samples_nerf(const uint32_t n_elements,
     // float ema_debias_old = 1 - (float)powf(decay, count);
     // float ema_debias_new = 1 - (float)powf(decay, count+1);
 
-    // float filtered_val = ((grid_out[i] * decay * ema_debias_old + importance
-    // * (1 - decay)) / ema_debias_new); grid_out[i] = filtered_val;
+    // float filtered_val = ((grid_out[i] * decay * ema_debias_old + importance * (1 -
+    // decay)) / ema_debias_new); grid_out[i] = filtered_val;
 
     // Maximum instead of EMA allows capture of very thin features.
-    // Basically, we want the grid cell turned on as soon as _ANYTHING_ visible
-    // is in there.
+    // Basically, we want the grid cell turned on as soon as _ANYTHING_ visible is in
+    // there.
 
     float prev_val = grid_out[i];
     float val = (prev_val < 0.f) ? prev_val : fmaxf(prev_val * decay, importance);
@@ -810,8 +808,8 @@ generate_nerf_network_inputs_from_positions(const uint32_t n_elements,
     if (i >= n_elements) return;
 
     Vector3f dir = (pos[i] - Vector3f::Constant(0.5f))
-                       .normalized();  // choose outward pointing directions,
-                                       // for want of a better choice
+                       .normalized();  // choose outward pointing directions, for want
+                                       // of a better choice
     network_input(i)->set_with_optional_light_dir(warp_position(pos[i], aabb),
                                                   warp_direction(dir),
                                                   warp_dt(MIN_CONE_STEPSIZE()),
@@ -984,10 +982,10 @@ composite_kernel_nerf(const uint32_t n_elements,
         Array3f rgb = network_to_rgb(local_network_output, rgb_activation);
 
         if (render_mode == ERenderMode::Normals) {
-            // Network input contains the gradient of the network output w.r.t.
-            // input. So to compute density gradients, we need to apply the
-            // chain rule. The normal is then in the opposite direction of the
-            // density gradient (i.e. the direction of decreasing density)
+            // Network input contains the gradient of the network output w.r.t. input.
+            // So to compute density gradients, we need to apply the chain rule.
+            // The normal is then in the opposite direction of the density gradient
+            // (i.e. the direction of decreasing density)
             Vector3f normal = -network_to_density_derivative(
                                   float(local_network_output[3]), density_activation) *
                               warped_pos;
@@ -1162,11 +1160,9 @@ image_idx(uint32_t base_idx,
         return img;
     }
 
-    // return ((base_idx + n_rays_total) * 56924617 + 96925573) %
-    // n_training_images;
+    // return ((base_idx + n_rays_total) * 56924617 + 96925573) % n_training_images;
 
-    // Neighboring threads in the warp process the same image. Increases
-    // locality.
+    // Neighboring threads in the warp process the same image. Increases locality.
     if (pdf) {
         *pdf = 1.0f;
     }
@@ -1261,14 +1257,13 @@ generate_training_samples_nerf(const uint32_t n_rays,
         /* DEBUG - compare the stored rays to the computed ones
         const Matrix<float, 3, 4> xform =
         get_xform_given_rolling_shutter(training_xforms[img],
-        metadata[img].rolling_shutter, xy, 0.f); Ray ray2; ray2.o =
-        xform.col(3); ray2.d = f_theta_distortion(xy, principal_point,
-        camera_distortion); ray2.d = (xform.block<3, 3>(0, 0) *
-        ray2.d).normalized(); if (i==1000) { printf("\n%d uv %0.3f,%0.3f pixel
-        %0.2f,%0.2f transform from [%0.5f %0.5f %0.5f] to [%0.5f %0.5f %0.5f]\n"
-                " origin    [%0.5f %0.5f %0.5f] vs [%0.5f %0.5f %0.5f]\n"
-                " direction [%0.5f %0.5f %0.5f] vs [%0.5f %0.5f %0.5f]\n"
-            , img,xy.x(), xy.y(), xy.x()*resolution.x(), xy.y()*resolution.y(),
+        metadata[img].rolling_shutter, xy, 0.f); Ray ray2; ray2.o = xform.col(3); ray2.d
+        = f_theta_distortion(xy, principal_point, camera_distortion); ray2.d =
+        (xform.block<3, 3>(0, 0) * ray2.d).normalized(); if (i==1000) { printf("\n%d uv
+        %0.3f,%0.3f pixel %0.2f,%0.2f transform from [%0.5f %0.5f %0.5f] to [%0.5f %0.5f
+        %0.5f]\n" " origin    [%0.5f %0.5f %0.5f] vs [%0.5f %0.5f %0.5f]\n" " direction
+        [%0.5f %0.5f %0.5f] vs [%0.5f %0.5f %0.5f]\n" , img,xy.x(), xy.y(),
+        xy.x()*resolution.x(), xy.y()*resolution.y(),
                 training_xforms[img].start.col(3).x(),training_xforms[img].start.col(3).y(),training_xforms[img].start.col(3).z(),
                 training_xforms[img].end.col(3).x(),training_xforms[img].end.col(3).y(),training_xforms[img].end.col(3).z(),
                 ray.o.x(),ray.o.y(),ray.o.z(),
@@ -1306,8 +1301,8 @@ generate_training_samples_nerf(const uint32_t n_rays,
     float cone_angle =
         calc_cone_angle(ray.d.dot(xform.col(2)), focal_length, cone_angle_constant);
 
-    // The near distance prevents learning of camera-specific fudge right in
-    // front of the camera
+    // The near distance prevents learning of camera-specific fudge right in front of
+    // the camera
     tminmax.x() = fmaxf(tminmax.x(), near_distance);
 
     float startt = tminmax.x();
@@ -1393,12 +1388,12 @@ loss_and_gradient(const Vector3f& target,
         case ELossType::Smape:
             return smape_loss(target, prediction);
             break;
-        // Note: we divide the huber loss by a factor of 5 such that its L2
-        // region near zero matches with the L2 loss and error numbers become
-        // more comparable. This allows reading off dB numbers of ~converged
-        // models and treating them as approximate PSNR to compare with other
-        // NeRF methods. Self-normalizing optimizers such as Adam are agnostic
-        // to such constant factors; optimization is therefore unaffected.
+        // Note: we divide the huber loss by a factor of 5 such that its L2 region near
+        // zero matches with the L2 loss and error numbers become more comparable. This
+        // allows reading off dB numbers of ~converged models and treating them as
+        // approximate PSNR to compare with other NeRF methods. Self-normalizing
+        // optimizers such as Adam are agnostic to such constant factors; optimization
+        // is therefore unaffected.
         case ELossType::Huber:
             return huber_loss(target, prediction, 0.1f) / 5.0f;
             break;
@@ -1609,10 +1604,9 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
     }
 
     Array3f exposure_scale = (0.6931471805599453f * exposure[img]).exp();
-    // Array3f rgbtarget = composit_and_lerp(xy, resolution, img,
-    // training_images, background_color, exposure_scale); Array3f rgbtarget =
-    // composit(xy, resolution, img, training_images, background_color,
-    // exposure_scale);
+    // Array3f rgbtarget = composit_and_lerp(xy, resolution, img, training_images,
+    // background_color, exposure_scale); Array3f rgbtarget = composit(xy, resolution,
+    // img, training_images, background_color, exposure_scale);
     Array4f texsamp = read_rgba(xy, resolution, img, training_images);
 
     Array3f rgbtarget;
@@ -1645,9 +1639,8 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
     network_output -= padded_output_width * compacted_numsteps;  // rewind the pointer
     coords_in -= compacted_numsteps;
 
-    uint32_t compacted_base =
-        atomicAdd(numsteps_counter,
-                  compacted_numsteps);  // first entry in the array is a counter
+    uint32_t compacted_base = atomicAdd(
+        numsteps_counter, compacted_numsteps);  // first entry in the array is a counter
     compacted_numsteps =
         min(max_samples_compacted - min(max_samples_compacted, compacted_base),
             compacted_numsteps);
@@ -1665,11 +1658,11 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
     LossAndGradient lg = loss_and_gradient(rgbtarget, rgb_ray, loss_type);
     lg.loss /= img_pdf * xy_pdf;
 
-    // Note: dividing the gradient by the PDF would cause unbiased loss
-    // estimates. Essentially: variance reduction, but otherwise the same
-    // optimization. We _dont_ want that. If importance sampling is enabled, we
-    // _do_ actually want to change the weighting of the loss function. So don't
-    // divide. lg.gradient /= img_pdf * xy_pdf;
+    // Note: dividing the gradient by the PDF would cause unbiased loss estimates.
+    // Essentially: variance reduction, but otherwise the same optimization.
+    // We _dont_ want that. If importance sampling is enabled, we _do_ actually want
+    // to change the weighting of the loss function. So don't divide.
+    // lg.gradient /= img_pdf * xy_pdf;
 
     float mean_loss = lg.loss.mean();
     if (loss_output) {
@@ -1704,8 +1697,8 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
                                          sharpness_pos.x()] +
                           1e-6f;
 
-            // The maximum value of positive floats interpreted in uint format
-            // is the same as the maximum value of the floats.
+            // The maximum value of positive floats interpreted in uint format is the
+            // same as the maximum value of the floats.
             float grid_sharp = __uint_as_float(
                 atomicMax((uint32_t*)&cascaded_grid_at(
                               hitpoint, sharpness_grid, mip_from_pos(hitpoint)),
@@ -1751,10 +1744,9 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
         rgb_ray2 += weight * rgb;
         T *= (1.f - alpha);
 
-        // we know the suffix of this ray compared to where we are up to. note
-        // the suffix depends on this step's alpha as suffix =
-        // (1-alpha)*(somecolor), so dsuffix/dalpha = -somecolor =
-        // -suffix/(1-alpha)
+        // we know the suffix of this ray compared to where we are up to. note the
+        // suffix depends on this step's alpha as suffix = (1-alpha)*(somecolor), so
+        // dsuffix/dalpha = -somecolor = -suffix/(1-alpha)
         const Array3f suffix = rgb_ray - rgb_ray2;
         const Array3f dloss_by_drgb = weight * lg.gradient;
 
@@ -1767,8 +1759,8 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
                  network_to_rgb_derivative(local_network_output[0], rgb_activation) +
              fmaxf(0.0f,
                    output_l2_reg *
-                       (float)local_network_output[0]));  // Penalize way too
-                                                          // large color values
+                       (float)local_network_output[0]));  // Penalize way too large
+                                                          // color values
         local_dL_doutput[1] =
             loss_scale *
             (dloss_by_drgb.y() *
@@ -1786,11 +1778,11 @@ compute_loss_kernel_train_nerf(const uint32_t n_rays,
             density_derivative *
             (dt * lg.gradient.matrix().dot((T * rgb - suffix).matrix()));
 
-        // static constexpr float mask_supervision_strength = 1.f; // we are
-        // already 'leaking' mask information into the nerf via the random bg
-        // colors; setting this to eg between 1 and  100 encourages density
-        // towards 0 in such regions. dloss_by_dmlp += (texsamp.w()<0.001f) ?
-        // mask_supervision_strength * weight : 0.f ;
+        // static constexpr float mask_supervision_strength = 1.f; // we are already
+        // 'leaking' mask information into the nerf via the random bg colors; setting
+        // this to eg between 1 and  100 encourages density towards 0 in such regions.
+        // dloss_by_dmlp += (texsamp.w()<0.001f) ? mask_supervision_strength * weight :
+        // 0.f ;
 
         local_dL_doutput[3] =
             loss_scale * dloss_by_dmlp +
@@ -1907,8 +1899,8 @@ compute_cam_gradient_train_nerf(const uint32_t n_rays,
         ray_gradient.o += pos_gradient;
         const Vector3f pos = unwarp_position(warped_pos, aabb);
 
-        // Scaled by t to account for the fact that further-away objects'
-        // position changes more rapidly as the direction changes.
+        // Scaled by t to account for the fact that further-away objects' position
+        // changes more rapidly as the direction changes.
         float t = (pos - ray.o).norm();
         const Vector3f dir_gradient = coords_gradient(j)->dir.d.cwiseProduct(
             warp_direction_derivative(coords(j)->dir.d));
@@ -1932,14 +1924,12 @@ compute_cam_gradient_train_nerf(const uint32_t n_rays,
 
     if (distortion_gradient) {
         // Rotate ray gradient to obtain image plane gradient.
-        // This has the effect of projecting the (already projected) ray
-        // gradient from the tangent plane of the sphere onto the image plane
-        // (which is correct!).
+        // This has the effect of projecting the (already projected) ray gradient from
+        // the tangent plane of the sphere onto the image plane (which is correct!).
         Vector3f image_plane_gradient =
             xform.block<3, 3>(0, 0).inverse() * ray_gradient.d;
 
-        // Splat the resulting 2D image plane gradient into the distortion
-        // params
+        // Splat the resulting 2D image plane gradient into the distortion params
         deposit_image_gradient<2>(image_plane_gradient.head<2>() / xy_pdf,
                                   distortion_gradient,
                                   distortion_gradient_weight,
@@ -1957,9 +1947,9 @@ compute_cam_gradient_train_nerf(const uint32_t n_rays,
 
     if (cam_rot_gradient) {
         // Rotation is averaged in log-space (i.e. by averaging angle-axes).
-        // Due to our construction of ray_gradient.d, ray_gradient.d and ray.d
-        // are orthogonal, leading to the angle_axis magnitude to equal the
-        // magnitude of ray_gradient.d.
+        // Due to our construction of ray_gradient.d, ray_gradient.d and ray.d are
+        // orthogonal, leading to the angle_axis magnitude to equal the magnitude
+        // of ray_gradient.d.
         Vector3f angle_axis = ray.d.cross(ray_gradient.d);
 
 // Atomically reduce the ray gradient into the xform gradient
@@ -2059,8 +2049,8 @@ init_rays_with_payload_kernel_nerf(uint32_t spp,
         dof = 0.0;
     }
 
-    // TODO: pixel_to_ray also immediately computes u,v for the pixel, so this
-    // is somewhat redundant
+    // TODO: pixel_to_ray also immediately computes u,v for the pixel, so this is
+    // somewhat redundant
     float u = (x + 0.5f) * (1.f / resolution.x());
     float v = (y + 0.5f) * (1.f / resolution.y());
     float ray_time = rolling_shutter.x() + rolling_shutter.y() * u +
@@ -2228,8 +2218,7 @@ Testbed::NerfTracer::init_rays_from_camera(uint32_t spp,
                                            float cone_angle_constant,
                                            ERenderMode render_mode,
                                            cudaStream_t stream) {
-    // Make sure we have enough memory reserved to render at the requested
-    // resolution
+    // Make sure we have enough memory reserved to render at the requested resolution
     size_t n_pixels = (size_t)resolution.x() * resolution.y();
     enlarge(n_pixels, padded_output_width, n_extra_dims, stream);
 
@@ -2791,8 +2780,8 @@ Testbed::load_nerf() {
             json_paths.emplace_back(m_data_path);
         } else {
             throw std::runtime_error{
-                "NeRF data path must either be a json file or a directory "
-                "containing json files."};
+                "NeRF data path must either be a json file or a directory containing "
+                "json files."};
         }
 
         m_nerf.training.dataset = ngp::load_nerf(json_paths, m_nerf.sharpen);
@@ -2839,12 +2828,12 @@ Testbed::load_nerf() {
         // m_nerf.training.optimize_exposure = true;
     }
 
-    // Uncomment the following line to see how the network learns distortion
-    // from scratch rather than starting from the distortion that's described by
-    // the training data. m_nerf.training.dataset.camera_distortion = {};
+    // Uncomment the following line to see how the network learns distortion from
+    // scratch rather than starting from the distortion that's described by the training
+    // data. m_nerf.training.dataset.camera_distortion = {};
 
-    // Perturbation of the training cameras -- for debugging the online
-    // extrinsics learning code
+    // Perturbation of the training cameras -- for debugging the online extrinsics
+    // learning code
     float perturb_amount = 0.0f;
     if (perturb_amount > 0.f) {
         for (uint32_t i = 0; i < m_nerf.training.dataset.n_images; ++i) {
@@ -2880,12 +2869,11 @@ Testbed::load_nerf() {
 
     int max_aabb_scale = 1 << (NERF_CASCADES() - 1);
     if (m_nerf.training.dataset.aabb_scale > max_aabb_scale) {
-        throw std::runtime_error{
-            std::string{"NeRF dataset must have `aabb_scale <= "} +
-            std::to_string(max_aabb_scale) + "`, but is " +
-            std::to_string(m_nerf.training.dataset.aabb_scale) +
-            ". You can increase this limit by factors of 2 by incrementing "
-            "`NERF_CASCADES()` and re-compiling."};
+        throw std::runtime_error{std::string{"NeRF dataset must have `aabb_scale <= "} +
+                                 std::to_string(max_aabb_scale) + "`, but is " +
+                                 std::to_string(m_nerf.training.dataset.aabb_scale) +
+                                 ". You can increase this limit by factors of 2 by "
+                                 "incrementing `NERF_CASCADES()` and re-compiling."};
     }
 
     m_aabb = BoundingBox{Vector3f::Constant(0.5f), Vector3f::Constant(0.5f)};
@@ -2930,10 +2918,9 @@ Testbed::update_density_grid_nerf(float decay,
         NerfPosition,  // positions at which the NN will be queried for density
                        // evaluation
         uint32_t,      // indices of corresponding density grid cells
-        float,         // the resulting densities `density_grid_tmp` to be merged with
-                       // the running estimate of the grid
-        network_precision_t  // output of the MLP before being converted to
-                             // densities.
+        float,  // the resulting densities `density_grid_tmp` to be merged with the
+                // running estimate of the grid
+        network_precision_t  // output of the MLP before being converted to densities.
         >(stream,
           &alloc,
           n_density_grid_samples,
@@ -2946,15 +2933,15 @@ Testbed::update_density_grid_nerf(float decay,
     float* density_grid_tmp = std::get<2>(scratch);
     network_precision_t* mlp_out = std::get<3>(scratch);
 
-    if ((m_training_step == 0) || (m_nerf.training.n_images_for_training !=
-                                   m_nerf.training.n_images_for_training_prev)) {
+    if (m_training_step == 0 || m_nerf.training.n_images_for_training !=
+                                    m_nerf.training.n_images_for_training_prev) {
         m_nerf.training.n_images_for_training_prev =
             m_nerf.training.n_images_for_training;
         if (m_training_step == 0) {
             m_nerf.density_grid_ema_step = 0;
         }
-        // Only cull away empty regions where no camera is looking when the
-        // cameras are actually meaningful.
+        // Only cull away empty regions where no camera is looking when the cameras are
+        // actually meaningful.
         if (!m_nerf.training.dataset.rays_data.data()) {
             linear_kernel(mark_untrained_density_grid,
                           0,
@@ -3248,8 +3235,8 @@ Testbed::train_nerf(uint32_t target_batch_size,
     // This is low-overhead enough to warrant always being on.
     // It makes for useful visualizations of the training error.
     bool accumulate_error = true;
-    if (accumulate_error && (m_nerf.training.n_steps_since_error_map_update >=
-                             m_nerf.training.n_steps_between_error_map_updates)) {
+    if (accumulate_error && m_nerf.training.n_steps_since_error_map_update >=
+                                m_nerf.training.n_steps_between_error_map_updates) {
         m_nerf.training.error_map.cdf_resolution = m_nerf.training.error_map.resolution;
         m_nerf.training.error_map.cdf_x_cond_y.resize(
             m_nerf.training.error_map.cdf_resolution.prod() *
@@ -3831,8 +3818,8 @@ Testbed::optimise_mesh_step(uint32_t n_steps) {
 
         // For each optimizer step, we need the density at the given pos...
         m_nerf_network->density(m_inference_stream, positions_matrix, density_matrix);
-        // ...as well as the input gradient w.r.t. density, which we will store
-        // in the nerf coords.
+        // ...as well as the input gradient w.r.t. density, which we will store in the
+        // nerf coords.
         m_nerf_network->input_gradient(
             m_inference_stream, 3, positions_matrix, positions_matrix);
         // and the 1ring centroid for laplacian smoothing

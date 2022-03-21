@@ -55,8 +55,8 @@ namespace fs = filesystem;
 
 NGP_NAMESPACE_BEGIN
 
-// how much to scale the scene by vs the original nerf dataset; we want to fit
-// the thing in the unit cube
+// how much to scale the scene by vs the original nerf dataset; we want to fit the thing
+// in the unit cube
 static constexpr float NERF_SCALE = 0.33f;
 
 __global__ void
@@ -137,8 +137,8 @@ compute_sharpness(Eigen::Vector2i sharpness_resolution,
     y1 = max(y1, 1);
     x2 = min(x2, image_resolution.x() - 2);
     y2 = min(y2, image_resolution.y() - 2);
-    // yes, yes I know I should do a parallel reduction and shared memory and
-    // stuff. but we have so many tiles in flight, and this is load-time, meh.
+    // yes, yes I know I should do a parallel reduction and shared memory and stuff. but
+    // we have so many tiles in flight, and this is load-time, meh.
     float tot_lap = 0.f, tot_lap2 = 0.f, tot_lum = 0.f;
     float scal = 1.f / ((x2 - x1) * (y2 - y1));
     for (int yy = y1; yy < y2; ++yy) {
@@ -232,8 +232,8 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount) 
     std::vector<Ray*> rays;
     if (transforms["camera"].is_array()) {
         throw std::runtime_error{
-            "hdf5 is no longer supported. please use the hdf52nerf.py "
-            "conversion script"};
+            "hdf5 is no longer supported. please use the hdf52nerf.py conversion "
+            "script"};
     }
 
     // nerf original format
@@ -474,10 +474,9 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount) 
         }
 
         if (json.contains("aabb")) {
-            // map the given aabb of the form
-            // [[minx,miny,minz],[maxx,maxy,maxz]] via an isotropic scale and
-            // translate to fit in the (0,0,0)-(1,1,1) cube, with the given
-            // center at 0.5,0.5,0.5
+            // map the given aabb of the form [[minx,miny,minz],[maxx,maxy,maxz]] via an
+            // isotropic scale and translate to fit in the (0,0,0)-(1,1,1) cube, with
+            // the given center at 0.5,0.5,0.5
             const auto& aabb = json["aabb"];
             float length = std::max(
                 0.000001f,
@@ -615,9 +614,9 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount) 
                                     255.0f *
                                     srgb_to_linear(
                                         alpha_img[i * 4] *
-                                        (1.f / 255.f)));  // copy red channel of alpha
-                                                          // to alpha.png to our alpha
-                                                          // channel
+                                        (1.f /
+                                         255.f)));  // copy red channel of alpha to
+                                                    // alpha.png to our alpha channel
                             }
                         }
 
@@ -728,8 +727,7 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount) 
                         }
                     };
 
-                    // x_fov is in degrees, camera_angle_x in radians. Yes, it's
-                    // silly.
+                    // x_fov is in degrees, camera_angle_x in radians. Yes, it's silly.
                     float x_fl = read_focal_length(result.image_resolution.x(), "x");
                     float y_fl = read_focal_length(result.image_resolution.y(), "y");
 
@@ -785,8 +783,7 @@ load_nerf(const std::vector<filesystem::path>& jsonpaths, float sharpen_amount) 
     assert(image_type != ImageDataType::None);
 
     // Copy loaded images to the GPU. If the type is Half, directly copy to the
-    // resulting buffer. Otherwise, copy to a temporary buffer and cast on the
-    // GPU.
+    // resulting buffer. Otherwise, copy to a temporary buffer and cast on the GPU.
     size_t bytes_per_channel = image_type == ImageDataType::Byte
                                    ? 1
                                    : (image_type == ImageDataType::Half ? 2 : 4);

@@ -424,9 +424,9 @@ shade_kernel_sdf(const uint32_t n_elements,
                      pos.z() - floorf(pos.z())};
         } break;
         case ERenderMode::Normals: {
-            // Hack to make normals look nicer: treat them as sRGB valued and
-            // map that to linear. Gives a more perceptually uniform appearance
-            // (assuming sRGB is roughly perceptual).
+            // Hack to make normals look nicer: treat them as sRGB valued and map that
+            // to linear. Gives a more perceptually uniform appearance (assuming sRGB is
+            // roughly perceptual).
             color = srgb_to_linear(0.5f * normal.array() + Array3f::Constant(0.5f));
         } break;
         case ERenderMode::Cost: {
@@ -478,8 +478,8 @@ compact_kernel_shadow_sdf(const uint32_t n_elements,
         dst_prev_distances[idx] = src_prev_distances[i];
         dst_total_distances[idx] = src_total_distances[i];
         dst_min_visibility[idx] = src_min_visibility[i];
-    } else {  // For shadow rays, collect _all_ final samples to keep track of
-              // their partial visibility
+    } else {  // For shadow rays, collect _all_ final samples to keep track of their
+              // partial visibility
         uint32_t idx = atomicAdd(finalCounter, 1);
         dst_final_payloads[idx] = src_payload;
         dst_final_positions[idx] = src_positions[i];
@@ -580,8 +580,8 @@ compare_signs_kernel(uint32_t n_elements,
     bool inside2 = distances_model[i] <= 0.f;
     if (octree_nodes &&
         !TriangleOctree::contains(octree_nodes, max_depth, positions[i])) {
-        inside2 = inside1;           // assume, when using the octree, that the model is
-                                     // always correct outside the octree.
+        inside2 = inside1;  // assume, when using the octree, that the model is always
+                            // correct outside the octree.
         atomicAdd(&counters[6], 1);  // outside the octree
     } else {
         atomicAdd(&counters[7], 1);  // inside the octree
@@ -735,8 +735,7 @@ Testbed::SphereTracer::init_rays_from_camera(uint32_t spp,
                                              Array4f* frame_buffer,
                                              const TriangleOctree* octree,
                                              cudaStream_t stream) {
-    // Make sure we have enough memory reserved to render at the requested
-    // resolution
+    // Make sure we have enough memory reserved to render at the requested resolution
     size_t n_pixels = (size_t)resolution.x() * resolution.y();
     enlarge(n_pixels);
 
@@ -961,33 +960,53 @@ Testbed::FiniteDifferenceNormalsApproximator::normal(
     cudaStream_t stream) {
     enlarge(n_elements);
 
-    parallel_for_gpu(stream, n_elements, [=, *this] __device__(size_t i) {
-        Vector3f p = pos[i];
-        dx[i] = Vector3f{p.x() + epsilon, p.y(), p.z()};
-        dy[i] = Vector3f{p.x(), p.y() + epsilon, p.z()};
-        dz[i] = Vector3f{p.x(), p.y(), p.z() + epsilon};
-    });
+    parallel_for_gpu(stream,
+                     n_elements,
+                     [pos = pos.data(),
+                      dx = dx.data(),
+                      dy = dy.data(),
+                      dz = dz.data(),
+                      epsilon] __device__(size_t i) {
+                         Vector3f p = pos[i];
+                         dx[i] = Vector3f{p.x() + epsilon, p.y(), p.z()};
+                         dy[i] = Vector3f{p.x(), p.y() + epsilon, p.z()};
+                         dz[i] = Vector3f{p.x(), p.y(), p.z() + epsilon};
+                     });
 
     distance_function(n_elements, dx, dist_dx_pos, stream);
     distance_function(n_elements, dy, dist_dy_pos, stream);
     distance_function(n_elements, dz, dist_dz_pos, stream);
 
-    parallel_for_gpu(stream, n_elements, [=, *this] __device__(size_t i) {
-        Vector3f p = pos[i];
-        dx[i] = Vector3f{p.x() - epsilon, p.y(), p.z()};
-        dy[i] = Vector3f{p.x(), p.y() - epsilon, p.z()};
-        dz[i] = Vector3f{p.x(), p.y(), p.z() - epsilon};
-    });
+    parallel_for_gpu(stream,
+                     n_elements,
+                     [pos = pos.data(),
+                      dx = dx.data(),
+                      dy = dy.data(),
+                      dz = dz.data(),
+                      epsilon] __device__(size_t i) {
+                         Vector3f p = pos[i];
+                         dx[i] = Vector3f{p.x() - epsilon, p.y(), p.z()};
+                         dy[i] = Vector3f{p.x(), p.y() - epsilon, p.z()};
+                         dz[i] = Vector3f{p.x(), p.y(), p.z() - epsilon};
+                     });
 
     distance_function(n_elements, dx, dist_dx_neg, stream);
     distance_function(n_elements, dy, dist_dy_neg, stream);
     distance_function(n_elements, dz, dist_dz_neg, stream);
 
-    parallel_for_gpu(stream, n_elements, [=, *this] __device__(size_t i) {
-        normal[i] = {dist_dx_pos[i] - dist_dx_neg[i],
-                     dist_dy_pos[i] - dist_dy_neg[i],
-                     dist_dz_pos[i] - dist_dz_neg[i]};
-    });
+    parallel_for_gpu(stream,
+                     n_elements,
+                     [normal = normal.data(),
+                      dist_dx_pos = dist_dx_pos.data(),
+                      dist_dx_neg = dist_dx_neg.data(),
+                      dist_dy_pos = dist_dy_pos.data(),
+                      dist_dy_neg = dist_dy_neg.data(),
+                      dist_dz_pos = dist_dz_pos.data(),
+                      dist_dz_neg = dist_dz_neg.data()] __device__(size_t i) {
+                         normal[i] = {dist_dx_pos[i] - dist_dx_neg[i],
+                                      dist_dy_pos[i] - dist_dy_neg[i],
+                                      dist_dz_pos[i] - dist_dz_neg[i]};
+                     });
 }
 
 void
@@ -1092,8 +1111,8 @@ Testbed::render_sdf(const distance_fun_t& distance_function,
         if (m_sdf.analytic_normals || gt_raytrace) {
             normals_function(n_hit, rays_hit.pos, rays_hit.normal, stream);
         } else {
-            // Prevent spurious enlargements by reserving enough memory to hold
-            // a full-res image in any case.
+            // Prevent spurious enlargements by reserving enough memory to hold a
+            // full-res image in any case.
             m_sdf.fd_normals.enlarge(render_buffer.resolution().x() *
                                      render_buffer.resolution().y());
             m_sdf.fd_normals.normal(n_hit,
@@ -1240,8 +1259,8 @@ Testbed::load_mesh() {
     m_bounding_radius = Vector3f::Constant(0.5f).norm();
     set_scale(m_bounding_radius * 1.5f);
 
-    // Compute discrete probability distribution for later sampling of the
-    // mesh's surface
+    // Compute discrete probability distribution for later sampling of the mesh's
+    // surface
     m_sdf.triangle_weights.resize(n_triangles);
     for (size_t i = 0; i < n_triangles; ++i) {
         m_sdf.triangle_weights[i] = m_sdf.triangles_cpu[i].surface_area();
@@ -1278,8 +1297,8 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
     const uint32_t n_to_generate_surface =
         n_to_generate_surface_exact + n_to_generate_surface_offset;
 
-    // Generate uniform 3D samples. Some of these will be transformed to cover
-    // the surfaces uniformly. Others will be left as-is.
+    // Generate uniform 3D samples. Some of these will be transformed to cover the
+    // surfaces uniformly. Others will be left as-is.
     generate_random_uniform<float>(stream, m_rng, n_to_generate * 3, (float*)positions);
 
     linear_kernel(sample_uniform_on_triangle_kernel,
@@ -1297,8 +1316,8 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
 
     // If we have an octree, generate uniform samples within that octree.
     // Otherwise, at least confine uniform samples to the AABB.
-    // (For the uniform_only case, we always use the AABB, then the IoU kernel
-    // checks against the octree later)
+    // (For the uniform_only case, we always use the AABB, then the IoU kernel checks
+    // against the octree later)
     float stddev = m_bounding_radius / 1024.0f * m_sdf.training.surface_offset_scale;
     if (!uniform_only && (m_sdf.uses_takikawa_encoding || m_sdf.use_triangle_octree)) {
         linear_kernel(uniform_octree_sample_kernel,
@@ -1312,8 +1331,8 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
                       positions + n_to_generate_surface);
         m_rng.advance();
 
-        // If we know the finest discretization of the octree, we can
-        // concentrate points MUCH closer to the mesh surface
+        // If we know the finest discretization of the octree, we can concentrate
+        // points MUCH closer to the mesh surface
         float leaf_size = scalbnf(1.0f, -m_sdf.triangle_octree->depth() + 1);
         if (leaf_size < stddev) {
             tlog::warning() << "leaf_size < stddev";
@@ -1360,8 +1379,8 @@ Testbed::generate_training_samples_sdf(Vector3f* positions,
                   positions + n_to_generate_surface_exact,
                   distances + n_to_generate_surface_exact);
 
-    // The following function expects `distances` to contain an upper bound on
-    // the true distance. This accelerates lookups.
+    // The following function expects `distances` to contain an upper bound on the
+    // true distance. This accelerates lookups.
     m_sdf.triangle_bvh->signed_distance_gpu(
         n_to_generate_uniform + n_to_generate_surface_offset,
         m_sdf.mesh_sdf_mode,
@@ -1460,10 +1479,9 @@ Testbed::training_prep_sdf(uint32_t batch_size,
     }
 }
 
-// set scale_existing_results_factor=0. to reset any existing results; set it
-// to 1.0 to accumulate more samples onto existing results set it to a fraction
-// near 1 to use a sliding EMA if blocking is false, then this returns the iou
-// from the *last* call
+// set scale_existing_results_factor=0. to reset any existing results; set it to 1.0 to
+// accumulate more samples onto existing results set it to a fraction near 1 to use a
+// sliding EMA if blocking is false, then this returns the iou from the *last* call
 double
 Testbed::calculate_iou(uint32_t n_samples,
                        float scale_existing_results_factor,
@@ -1472,8 +1490,8 @@ Testbed::calculate_iou(uint32_t n_samples,
     cudaStream_t stream = m_training_stream;
     uint32_t countercpu[8];
     m_sdf.iou_counter.enlarge(8);
-    if (!blocking)  // when not blocking, returns data from the *last* run, then
-                    // kicks off work to accumulate some more samples
+    if (!blocking)  // when not blocking, returns data from the *last* run, then kicks
+                    // off work to accumulate some more samples
         cudaMemcpy(countercpu, m_sdf.iou_counter.data(), 8 * 4, cudaMemcpyDeviceToHost);
 
     if (scale_existing_results_factor < 1.f) {
@@ -1492,8 +1510,8 @@ Testbed::calculate_iou(uint32_t n_samples,
         m_sdf.training.distances.enlarge(
             m_sdf.training.size);  // we use this buffer for the GT distances
         m_sdf.training.distances_shuffled.enlarge(
-            m_sdf.training.size);  // we use the shuffled output for the output
-                                   // of inference
+            m_sdf.training
+                .size);  // we use the shuffled output for the output of inference
 
         generate_training_samples_sdf(m_sdf.training.positions.data(),
                                       m_sdf.training.distances.data(),

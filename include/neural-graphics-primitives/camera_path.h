@@ -29,8 +29,8 @@ struct CameraKeyframe {
     Eigen::Vector4f R;
     Eigen::Vector3f T;
     float slice;
-    float scale;  // not a scale factor as in scaling the world, but the value
-                  // of m_scale (setting the focal plane along with slice)
+    float scale;  // not a scale factor as in scaling the world, but the value of
+                  // m_scale (setting the focal plane along with slice)
     float fov;
     float dof;
     Eigen::Matrix<float, 3, 4>

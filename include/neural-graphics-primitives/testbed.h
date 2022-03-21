@@ -375,10 +375,9 @@ class Testbed {
     reload_network_from_json(
         const nlohmann::json& json,
         const std::string& config_base_path =
-            "");  // config_base_path is needed so that if the passed in json
-                  // uses the 'parent' feature, we know where to look... be sure
-                  // to use a filename, or if a directory, end with a trailing
-                  // slash
+            "");  // config_base_path is needed so that if the passed in json uses the
+                  // 'parent' feature, we know where to look... be sure to use a
+                  // filename, or if a directory, end with a trailing slash
     void
     reset_accumulation();
     static ELossType
@@ -513,8 +512,8 @@ class Testbed {
     int
     marching_cubes(Eigen::Vector3i res3d, const BoundingBox& aabb, float thresh);
 
-    // Determines the 3d focus point by rendering a little 16x16 depth image
-    // around the mouse cursor and picking the median depth.
+    // Determines the 3d focus point by rendering a little 16x16 depth image around
+    // the mouse cursor and picking the median depth.
     void
     determine_autofocus_target_from_pixel(const Eigen::Vector2i& focus_pixel);
     void
@@ -726,8 +725,8 @@ class Testbed {
             Eigen::Vector2i image_resolution;
             int n_images_for_training = 0;  // how many images to train from, as a high
                                             // watermark compared to the dataset size
-            int n_images_for_training_prev = 0;  // how many images we saw last time we
-                                                 // updated the density grid
+            int n_images_for_training_prev =
+                0;  // how many images we saw last time we updated the density grid
 
             struct ErrorMap {
                 tcnn::GPUMemory<float> data;
@@ -772,8 +771,7 @@ class Testbed {
                 tcnn::GPUMemory<uint32_t>
                     numsteps_counter;  // number of steps each ray took
                 tcnn::GPUMemory<uint32_t>
-                    numsteps_counter_compacted;  // number of steps each ray
-                                                 // took
+                    numsteps_counter_compacted;  // number of steps each ray took
                 tcnn::GPUMemory<float> loss;
 
                 uint32_t rays_per_batch = 1 << 12;

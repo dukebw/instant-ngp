@@ -365,8 +365,7 @@ tonemap(Array3f x, ETonemapCurve curve) {
         const float denom = k3 * (W * W) + k4 * W + k5;
         const float white_scale = denom / nom;
 
-        // Include white scale and exposure bias in rational polynomial
-        // coefficients
+        // Include white scale and exposure bias in rational polynomial coefficients
         k0 = 4.0f * k0 * white_scale;
         k1 = 2.0f * k1 * white_scale;
         k2 = k2 * white_scale;

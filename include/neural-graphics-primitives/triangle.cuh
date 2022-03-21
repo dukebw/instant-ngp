@@ -43,8 +43,7 @@ struct Triangle {
         return (b - a).cross(c - a).normalized();
     }
 
-    // based on
-    // https://www.iquilezles.org/www/articles/intersectors/intersectors.htm
+    // based on https://www.iquilezles.org/www/articles/intersectors/intersectors.htm
     NGP_HOST_DEVICE float
     ray_intersect(const Eigen::Vector3f& ro,
                   const Eigen::Vector3f& rd,
@@ -70,8 +69,7 @@ struct Triangle {
         return ray_intersect(ro, rd, n);
     }
 
-    // based on
-    // https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+    // based on https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
     NGP_HOST_DEVICE float
     distance_sq(const Eigen::Vector3f& pos) const {
         Eigen::Vector3f v21 = b - a;

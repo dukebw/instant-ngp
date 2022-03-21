@@ -423,12 +423,10 @@ PYBIND11_MODULE(pyngp, m) {
              "returns true if the user clicked the 'I want a repl' button")
         .def("frame",
              &Testbed::frame,
-             "Process a single frame. Renders if a window was previously "
-             "created.")
+             "Process a single frame. Renders if a window was previously created.")
         .def("render",
              &Testbed::render_to_cpu,
-             "Renders an image at the requested resolution. Does not require a "
-             "window.",
+             "Renders an image at the requested resolution. Does not require a window.",
              py::arg("width") = 1920,
              py::arg("height") = 1080,
              py::arg("spp") = 1,
@@ -439,9 +437,9 @@ PYBIND11_MODULE(pyngp, m) {
              py::arg("shutter_fraction") = 1.0f)
         .def("render_with_rolling_shutter",
              &Testbed::render_with_rolling_shutter_to_cpu,
-             "Renders an image at the requested resolution. Does not require a "
-             "window. Supports rolling shutter, with per ray time being "
-             "computed as A+B*u+C*v+D*t for [A,B,C,D]",
+             "Renders an image at the requested resolution. Does not require a window. "
+             "Supports rolling shutter, with per ray time being computed as "
+             "A+B*u+C*v+D*t for [A,B,C,D]",
              py::arg("transform_matrix_start"),
              py::arg("transform_matrix_end"),
              py::arg("rolling_shutter") = Eigen::Vector4f::Zero(),
@@ -468,8 +466,7 @@ PYBIND11_MODULE(pyngp, m) {
              "Reload the network from a json object.")
         .def("override_sdf_training_data",
              &Testbed::override_sdf_training_data,
-             "Override the training data for learning a signed distance "
-             "function")
+             "Override the training data for learning a signed distance function")
         .def("calculate_iou",
              &Testbed::calculate_iou,
              "Calculate the intersection over union error value",
@@ -501,14 +498,13 @@ PYBIND11_MODULE(pyngp, m) {
              py::arg("aabb") = BoundingBox{},
              py::arg("thresh") = std::numeric_limits<float>::max(),
              py::arg("generate_uvs_for_obj_file") = false,
-             "Compute & save a marching cubes mesh from the current SDF or "
-             "NeRF model. "
-             "Supports OBJ and PLY format. Note that UVs are only supported by "
-             "OBJ files. "
-             "`thresh` is the density threshold; use 0 for SDF; 2.5 works well "
-             "for NeRF. "
-             "If the aabb parameter specifies an inside-out (\"empty\") box "
-             "(default), the current render_aabb bounding box is used.")
+             "Compute & save a marching cubes mesh from the current SDF or NeRF model. "
+             "Supports OBJ and PLY format. Note that UVs are only supported by OBJ "
+             "files. "
+             "`thresh` is the density threshold; use 0 for SDF; 2.5 works well for "
+             "NeRF. "
+             "If the aabb parameter specifies an inside-out (\"empty\") box (default), "
+             "the current render_aabb bounding box is used.")
         .def("compute_marching_cubes_mesh",
              &Testbed::compute_marching_cubes_mesh,
              py::arg("resolution") = Eigen::Vector3i::Constant(256),
@@ -517,10 +513,10 @@ PYBIND11_MODULE(pyngp, m) {
              "Compute a marching cubes mesh from the current SDF or NeRF model. "
              "Returns a python dict with numpy arrays V (vertices), N (vertex "
              "normals), C (vertex colors), and F (triangular faces). "
-             "`thresh` is the density threshold; use 0 for SDF; 2.5 works well "
-             "for NeRF. "
-             "If the aabb parameter specifies an inside-out (\"empty\") box "
-             "(default), the current render_aabb bounding box is used.");
+             "`thresh` is the density threshold; use 0 for SDF; 2.5 works well for "
+             "NeRF. "
+             "If the aabb parameter specifies an inside-out (\"empty\") box (default), "
+             "the current render_aabb bounding box is used.");
 
     // Interesting members.
     testbed.def_readwrite("dynamic_res", &Testbed::m_dynamic_res)
@@ -648,9 +644,8 @@ PYBIND11_MODULE(pyngp, m) {
         .def_readwrite("n_images_for_training",
                        &Testbed::Nerf::Training::n_images_for_training)
         .def_readonly("transforms", &Testbed::Nerf::Training::transforms)
-        //.def_readonly("focal_lengths",
-        //&Testbed::Nerf::Training::focal_lengths) // use
-        // training.dataset.metadata instead
+        //.def_readonly("focal_lengths", &Testbed::Nerf::Training::focal_lengths) // use
+        //training.dataset.metadata instead
         .def_readonly("image_resolution", &Testbed::Nerf::Training::image_resolution)
         .def_readwrite("near_distance", &Testbed::Nerf::Training::near_distance)
         .def_readwrite("density_grid_decay",
@@ -675,8 +670,8 @@ PYBIND11_MODULE(pyngp, m) {
              &Testbed::Nerf::Training::set_camera_extrinsics,
              py::arg("frame_idx"),
              py::arg("camera_to_world"),
-             "Set up the camera extrinsics for the given training image index, "
-             "from the given 3x4 transformation matrix.")
+             "Set up the camera extrinsics for the given training image index, from "
+             "the given 3x4 transformation matrix.")
         .def("get_camera_extrinsics",
              &Testbed::Nerf::Training::get_camera_extrinsics,
              py::arg("frame_idx"),
@@ -685,9 +680,9 @@ PYBIND11_MODULE(pyngp, m) {
              &Testbed::Nerf::Training::set_image,
              py::arg("frame_idx"),
              py::arg("img"),
-             "set one of the training images. must be a floating point numpy "
-             "array of (H,W,C) with 4 channels; linear color space; W and H "
-             "must match image size of the rest of the dataset");
+             "set one of the training images. must be a floating point numpy array of "
+             "(H,W,C) with 4 channels; linear color space; W and H must match image "
+             "size of the rest of the dataset");
 
     py::class_<Testbed::Sdf> sdf(testbed, "Sdf");
     sdf.def_readonly("training", &Testbed::Sdf::training)

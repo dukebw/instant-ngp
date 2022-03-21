@@ -24,8 +24,7 @@
 NGP_NAMESPACE_BEGIN
 
 struct TrainingImageMetadata {
-    // Camera intrinsics and additional data associated with a NeRF training
-    // image
+    // Camera intrinsics and additional data associated with a NeRF training image
     CameraDistortion camera_distortion = {};
     Eigen::Vector2f principal_point = Eigen::Vector2f::Constant(0.5f);
     Eigen::Vector2f focal_length = Eigen::Vector2f::Constant(1000.f);

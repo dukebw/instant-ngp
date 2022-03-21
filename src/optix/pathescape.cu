@@ -91,11 +91,10 @@ __raygen__rg() {
                        0,  // missSBTIndex
                        p0);
 
-            // If the ray didn't escape, p0 contains the index of the triangle
-            // that was hit.
+            // If the ray didn't escape, p0 contains the index of the triangle that was
+            // hit.
             if ((int)p0 == -1) {
-                // One ray escaped. We are outside. Distance doesn't need to be
-                // signed.
+                // One ray escaped. We are outside. Distance doesn't need to be signed.
                 return;
             }
 
@@ -104,8 +103,7 @@ __raygen__rg() {
                 params.triangles[p0].ray_intersect(ray_origin, ray_direction, N_0);
             const Vector3f N = faceforward(N_0, -ray_direction, N_0).normalized();
 
-            // Prevent self-intersections by subtracting 1e-3f from the target
-            // distance.
+            // Prevent self-intersections by subtracting 1e-3f from the target distance.
             ray_origin += ray_direction * fmaxf(0.0f, t - 1e-3f);
 
             ray_direction = random_dir_cosine(rng);

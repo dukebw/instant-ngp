@@ -75,8 +75,8 @@ class TriangleOctree {
 
         ThreadPool pool;
 
-        // Only generate nodes up to max_depth-1! The dual nodes will truly
-        // reach to the max depth
+        // Only generate nodes up to max_depth-1! The dual nodes will truly reach to the
+        // max depth
         for (uint8_t depth = 0; depth < max_depth - 1; ++depth) {
             int n_pending_nodes_to_build = node_counter - n_nodes;
 
@@ -113,8 +113,7 @@ class TriangleOctree {
                     int node_idx = node_counter++;
                     m_nodes[parent_idx].children[i] = node_idx;
 
-                    // Create regular nodes one layer less deep as the dual
-                    // nodes
+                    // Create regular nodes one layer less deep as the dual nodes
                     if (depth < max_depth - 2) {
                         m_nodes[node_idx].pos = {(uint16_t)child_pos.x(),
                                                  (uint16_t)child_pos.y(),
@@ -132,8 +131,8 @@ class TriangleOctree {
                         << " dual_nodes=" << m_dual_nodes.size()
                         << ". Populating dual nodes...";
 
-        // TODO: find a fast lockfree hashmap implementation and parallelize the
-        // bottom for loop
+        // TODO: find a fast lockfree hashmap implementation and parallelize the bottom
+        // for loop
         std::unordered_map<Vector4i16, uint32_t> coords;
         coords.reserve(m_dual_nodes.size() * 8);
         m_n_vertices = 0;
@@ -282,8 +281,8 @@ class TriangleOctree {
 
         float mint = MAX_DIST;
 
-        // Ensure that closer children are checked last such that they rise to
-        // the top of the stack
+        // Ensure that closer children are checked last such that they rise to the top
+        // of the stack
         uint8_t reorder_mask = 0;
         if (rd.x() > 0) reorder_mask |= 1;
         if (rd.y() > 0) reorder_mask |= 2;

@@ -37,8 +37,8 @@ struct DiscreteDistribution {
             pmf.emplace_back(norm);
             cdf.emplace_back(cdf_accum);
         }
-        cdf.back() = 1.0f;  // Prevent precision problems from causing overruns
-                            // in the end
+        cdf.back() =
+            1.0f;  // Prevent precision problems from causing overruns in the end
     }
 
     uint32_t

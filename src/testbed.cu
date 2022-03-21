@@ -158,9 +158,9 @@ Testbed::reload_network_from_file(const std::string& network_config_path) {
 void
 Testbed::reload_network_from_json(const json& json,
                                   const std::string& config_base_path) {
-    // config_base_path is needed so that if the passed in json uses the
-    // 'parent' feature, we know where to look... be sure to use a filename, or
-    // if a directory, end with a trailing slash
+    // config_base_path is needed so that if the passed in json uses the 'parent'
+    // feature, we know where to look... be sure to use a filename, or if a directory,
+    // end with a trailing slash
     m_network_config = merge_parent_network_config(json, config_base_path);
     reset_network();
 }
@@ -291,8 +291,8 @@ std::string
 get_filename_in_data_path_with_suffix(fs::path data_path,
                                       fs::path network_config_path,
                                       const char* suffix) {
-    // use the network config name along with the data path to build a filename
-    // with the requested suffix & extension
+    // use the network config name along with the data path to build a filename with the
+    // requested suffix & extension
     std::string default_name = network_config_path.basename();
     if (default_name == "") default_name = "base";
     if (data_path.empty()) return default_name + std::string(suffix);
@@ -890,44 +890,44 @@ Testbed::imgui() {
             Vector3f s = m_sun_dir;
             Vector3f u = m_up_dir;
             Array4f b = m_background_color;
-            snprintf(buf,
-                     sizeof(buf),
-                     "testbed.background_color = [%0.3f, %0.3f, %0.3f, %0.3f]\n"
-                     "testbed.exposure = %0.3f\n"
-                     "testbed.sun_dir = [%0.3f,%0.3f,%0.3f]\n"
-                     "testbed.up_dir = [%0.3f,%0.3f,%0.3f]\n"
-                     "testbed.view_dir = [%0.3f,%0.3f,%0.3f]\n"
-                     "testbed.look_at = [%0.3f,%0.3f,%0.3f]\n"
-                     "testbed.scale = %0.3f\n"
-                     "testbed.fov,testbed.dof,testbed.slice_plane_z = "
-                     "%0.3f,%0.3f,%0.3f\n"
-                     "testbed.autofocus_target = [%0.3f,%0.3f,%0.3f]\n"
-                     "testbed.autofocus = %s\n\n",
-                     b.x(),
-                     b.y(),
-                     b.z(),
-                     b.w(),
-                     m_exposure,
-                     s.x(),
-                     s.y(),
-                     s.z(),
-                     u.x(),
-                     u.y(),
-                     u.z(),
-                     v.x(),
-                     v.y(),
-                     v.z(),
-                     p.x(),
-                     p.y(),
-                     p.z(),
-                     scale(),
-                     fov(),
-                     m_dof,
-                     m_slice_plane_z,
-                     m_autofocus_target.x(),
-                     m_autofocus_target.y(),
-                     m_autofocus_target.z(),
-                     m_autofocus ? "True" : "False");
+            snprintf(
+                buf,
+                sizeof(buf),
+                "testbed.background_color = [%0.3f, %0.3f, %0.3f, %0.3f]\n"
+                "testbed.exposure = %0.3f\n"
+                "testbed.sun_dir = [%0.3f,%0.3f,%0.3f]\n"
+                "testbed.up_dir = [%0.3f,%0.3f,%0.3f]\n"
+                "testbed.view_dir = [%0.3f,%0.3f,%0.3f]\n"
+                "testbed.look_at = [%0.3f,%0.3f,%0.3f]\n"
+                "testbed.scale = %0.3f\n"
+                "testbed.fov,testbed.dof,testbed.slice_plane_z = %0.3f,%0.3f,%0.3f\n"
+                "testbed.autofocus_target = [%0.3f,%0.3f,%0.3f]\n"
+                "testbed.autofocus = %s\n\n",
+                b.x(),
+                b.y(),
+                b.z(),
+                b.w(),
+                m_exposure,
+                s.x(),
+                s.y(),
+                s.z(),
+                u.x(),
+                u.y(),
+                u.z(),
+                v.x(),
+                v.y(),
+                v.z(),
+                p.x(),
+                p.y(),
+                p.z(),
+                scale(),
+                fov(),
+                m_dof,
+                m_slice_plane_z,
+                m_autofocus_target.x(),
+                m_autofocus_target.y(),
+                m_autofocus_target.z(),
+                m_autofocus ? "True" : "False");
 
             if (m_testbed_mode == ETestbedMode::Sdf) {
                 size_t n = strlen(buf);
@@ -1702,9 +1702,9 @@ Testbed::draw_contents() {
             Vector2i res(m_picture_in_picture_res, m_picture_in_picture_res * 9 / 16);
             m_pip_render_surface->resize(res);
             if (m_pip_render_surface->spp() < 8) {
-                // a bit gross, but let's copy the keyframe's state into the
-                // global state in order to not have to plumb through the fov
-                // etc to render_frame.
+                // a bit gross, but let's copy the keyframe's state into the global
+                // state in order to not have to plumb through the fov etc to
+                // render_frame.
                 CameraKeyframe backup = copy_camera_to_keyframe();
                 CameraKeyframe pip_kf =
                     m_camera_path.eval_camera_path(m_camera_path.m_playtime);
@@ -1768,8 +1768,7 @@ Testbed::draw_contents() {
         }
 #else
         throw std::runtime_error{
-            "Multi-view rendering is only supported when compiling with "
-            "NGP_GUI."};
+            "Multi-view rendering is only supported when compiling with NGP_GUI."};
 #endif
     }
 }
@@ -1829,8 +1828,8 @@ Testbed::init_window(int resw, int resh, bool hidden) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable
-    // Keyboard Controls
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard
+    // Controls
     io.ConfigInputTrickleEventQueue = false;  // new ImGui event handling seems to make
                                               // camera controls laggy if this is true.
     ImGui::StyleColorsDark();
@@ -2055,8 +2054,8 @@ Testbed::string_to_loss_type(const std::string& str) {
         return ELossType::Smape;
     } else if (equals_case_insensitive(str, "Huber") ||
                equals_case_insensitive(str, "SmoothL1")) {
-        // Legacy: we used to refer to the Huber loss (L2 near zero, L1 further
-        // away) as "SmoothL1".
+        // Legacy: we used to refer to the Huber loss (L2 near zero, L1 further away) as
+        // "SmoothL1".
         return ELossType::Huber;
     } else if (equals_case_insensitive(str, "LogL1")) {
         return ELossType::LogL1;
@@ -2127,8 +2126,8 @@ Testbed::reset_network() {
         loss_config["otype"] = "L2";
     }
 
-    // Automatically determine certain parameters if we're dealing with the
-    // (hash)grid encoding
+    // Automatically determine certain parameters if we're dealing with the (hash)grid
+    // encoding
     if (to_lower(encoding_config.value("otype", "OneBlob")).find("grid") !=
         std::string::npos) {
         encoding_config["n_pos_dims"] = dims.n_pos;
@@ -2200,8 +2199,8 @@ Testbed::reset_network() {
             dims.n_pos,
             n_dir_dims,
             n_extra_dims,
-            4,  // The offset of 4 comes from the dt member variable of
-                // NerfCoordinate. HACKY
+            4,  // The offset of 4 comes from the dt member variable of NerfCoordinate.
+                // HACKY
             encoding_config,
             dir_encoding_config,
             network_config,
@@ -2492,9 +2491,8 @@ Testbed::calc_focal_length(const Vector2i& resolution, int fov_axis, float zoom)
 
 Vector2f
 Testbed::render_screen_center() const {
-    // see pixel_to_ray for how screen center is used; 0.5,0.5 is 'normal'. we
-    // flip so that it becomes the point in the original image we want to center
-    // on.
+    // see pixel_to_ray for how screen center is used; 0.5,0.5 is 'normal'. we flip so
+    // that it becomes the point in the original image we want to center on.
     auto screen_center = m_screen_center;
     return {(0.5f - screen_center.x()) * m_zoom + 0.5f,
             (0.5 - screen_center.y()) * m_zoom + 0.5f};
@@ -2864,8 +2862,8 @@ Testbed::load_snapshot(const std::string& filepath_string) {
         m_nerf.training.counters_rgb.measured_batch_size_before_compaction =
             m_network_config["snapshot"]["nerf"]["rgb"]
                             ["measured_batch_size_before_compaction"];
-        // If we haven't got a nerf dataset loaded, load dataset metadata from
-        // the snapshot and render using just that.
+        // If we haven't got a nerf dataset loaded, load dataset metadata from the
+        // snapshot and render using just that.
         if (m_data_path.empty() &&
             m_network_config["snapshot"]["nerf"].contains("dataset")) {
             m_nerf.training.dataset = m_network_config["snapshot"]["nerf"]["dataset"];

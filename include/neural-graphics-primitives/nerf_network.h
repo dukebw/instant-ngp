@@ -127,8 +127,8 @@ class NerfNetwork : public tcnn::Network<float, T> {
                               bool use_inference_params = true) override {
         if (input.layout() != tcnn::CM) {
             throw std::runtime_error(
-                "NerfNetwork::inference_mixed_precision input must be in "
-                "column major format.");
+                "NerfNetwork::inference_mixed_precision input must be in column major "
+                "format.");
         }
 
         uint32_t batch_size = input.n();
@@ -204,8 +204,8 @@ class NerfNetwork : public tcnn::Network<float, T> {
                 "format.");
         }
 
-        // Make sure our temporary buffers have the correct size for the given
-        // batch size
+        // Make sure our temporary buffers have the correct size for the given batch
+        // size
         uint32_t batch_size = input.n();
 
         auto forward = std::make_unique<ForwardContext>();
@@ -292,14 +292,13 @@ class NerfNetwork : public tcnn::Network<float, T> {
             dL_doutput.layout() != tcnn::CM ||
             (dL_dinput && dL_dinput->layout() != tcnn::CM)) {
             throw std::runtime_error(
-                "NerfNetwork::backward input and output must be in column "
-                "major format.");
+                "NerfNetwork::backward input and output must be in column major "
+                "format.");
         }
 
         const auto& forward = dynamic_cast<const ForwardContext&>(ctx);
 
-        // Make sure our teporary buffers have the correct size for the given
-        // batch size
+        // Make sure our teporary buffers have the correct size for the given batch size
         uint32_t batch_size = input.n();
 
         tcnn::GPUMatrix<T> dL_drgb{
@@ -447,12 +446,11 @@ class NerfNetwork : public tcnn::Network<float, T> {
                     bool prepare_input_gradients = false) {
         if (input.layout() != tcnn::CM) {
             throw std::runtime_error(
-                "NerfNetwork::density_forward input must be in column major "
-                "format.");
+                "NerfNetwork::density_forward input must be in column major format.");
         }
 
-        // Make sure our temporary buffers have the correct size for the given
-        // batch size
+        // Make sure our temporary buffers have the correct size for the given batch
+        // size
         uint32_t batch_size = input.n();
 
         auto forward = std::make_unique<ForwardContext>();
@@ -501,14 +499,13 @@ class NerfNetwork : public tcnn::Network<float, T> {
         if (input.layout() != tcnn::CM ||
             (dL_dinput && dL_dinput->layout() != tcnn::CM)) {
             throw std::runtime_error(
-                "NerfNetwork::density_backward input must be in column major "
-                "format.");
+                "NerfNetwork::density_backward input must be in column major format.");
         }
 
         const auto& forward = dynamic_cast<const ForwardContext&>(ctx);
 
-        // Make sure our temporary buffers have the correct size for the given
-        // batch size
+        // Make sure our temporary buffers have the correct size for the given batch
+        // size
         uint32_t batch_size = input.n();
 
         tcnn::GPUMatrixDynamic<T> dL_ddensity_network_input;
@@ -738,8 +735,8 @@ class NerfNetwork : public tcnn::Network<float, T> {
     uint32_t m_rgb_network_input_width;
     uint32_t m_n_pos_dims;
     uint32_t m_n_dir_dims;
-    uint32_t m_n_extra_dims;  // extra dimensions are assumed to be part of a
-                              // compound encoding with dir_dims
+    uint32_t m_n_extra_dims;  // extra dimensions are assumed to be part of a compound
+                              // encoding with dir_dims
     uint32_t m_dir_offset;
 
     // // Storage of forward pass data
