@@ -27,57 +27,60 @@ using namespace Eigen;
 
 NGP_NAMESPACE_BEGIN
 
-std::vector<Vector3f> load_obj(const std::string& filename) {
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
+std::vector<Vector3f>
+load_obj(const std::string& filename) {
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
 
-	std::string warn;
-	std::string err;
+    std::string warn;
+    std::string err;
 
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str());
+    bool ret =
+        tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str());
 
-	if (!warn.empty()) {
-		tlog::warning() << "Obj: " << warn;
-	}
+    if (!warn.empty()) {
+        tlog::warning() << "Obj: " << warn;
+    }
 
-	if (!err.empty()) {
-		throw std::runtime_error{std::string{"Error loading obj: "} + err};
-	}
+    if (!err.empty()) {
+        throw std::runtime_error{std::string{"Error loading obj: "} + err};
+    }
 
-	std::vector<Vector3f> result;
+    std::vector<Vector3f> result;
 
-	tlog::success() << "Loaded mesh \"" << filename << "\" file with " << shapes.size() << " shapes.";
+    tlog::success() << "Loaded mesh \"" << filename << "\" file with " << shapes.size()
+                    << " shapes.";
 
-	// Loop over shapes
-	for (size_t s = 0; s < shapes.size(); s++) {
-		// Loop over faces
-		size_t index_offset = 0;
-		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-			size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
+    // Loop over shapes
+    for (size_t s = 0; s < shapes.size(); s++) {
+        // Loop over faces
+        size_t index_offset = 0;
+        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+            size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
 
-			if (shapes[s].mesh.num_face_vertices[f] != 3) {
-				tlog::warning() << "Non-triangle face found in " << filename;
-				index_offset += fv;
-				continue;
-			}
+            if (shapes[s].mesh.num_face_vertices[f] != 3) {
+                tlog::warning() << "Non-triangle face found in " << filename;
+                index_offset += fv;
+                continue;
+            }
 
-			// Loop over vertices in the face.
-			for (size_t v = 0; v < 3; v++) {
-				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+            // Loop over vertices in the face.
+            for (size_t v = 0; v < 3; v++) {
+                tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
-				const tinyobj::real_t vx = attrib.vertices[3*idx.vertex_index+0];
-				const tinyobj::real_t vy = attrib.vertices[3*idx.vertex_index+1];
-				const tinyobj::real_t vz = attrib.vertices[3*idx.vertex_index+2];
+                const tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+                const tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+                const tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
 
-				result.emplace_back(vx, vy, vz);
-			}
+                result.emplace_back(vx, vy, vz);
+            }
 
-			index_offset += fv;
-		}
-	}
+            index_offset += fv;
+        }
+    }
 
-	return result;
+    return result;
 }
 
 NGP_NAMESPACE_END

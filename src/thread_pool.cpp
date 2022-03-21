@@ -20,101 +20,104 @@ NGP_NAMESPACE_BEGIN
 
 using namespace std;
 
-ThreadPool::ThreadPool()
-: ThreadPool{thread::hardware_concurrency()} {}
+ThreadPool::ThreadPool() : ThreadPool{thread::hardware_concurrency()} {}
 
 ThreadPool::ThreadPool(size_t maxNumThreads, bool force) {
-	if (!force) {
-		maxNumThreads = min((size_t)thread::hardware_concurrency(), maxNumThreads);
-	}
-	startThreads(maxNumThreads);
-	mNumTasksInSystem.store(0);
+    if (!force) {
+        maxNumThreads = min((size_t)thread::hardware_concurrency(), maxNumThreads);
+    }
+    startThreads(maxNumThreads);
+    mNumTasksInSystem.store(0);
 }
 
-ThreadPool::~ThreadPool() {
-	shutdownThreads(mThreads.size());
+ThreadPool::~ThreadPool() { shutdownThreads(mThreads.size()); }
+
+void
+ThreadPool::startThreads(size_t num) {
+    mNumThreads += num;
+    for (size_t i = mThreads.size(); i < mNumThreads; ++i) {
+        mThreads.emplace_back([this, i] {
+            while (true) {
+                unique_lock<mutex> lock{mTaskQueueMutex};
+
+                // look for a work item
+                while (i < mNumThreads && mTaskQueue.empty()) {
+                    // if there are none wait for notification
+                    mWorkerCondition.wait(lock);
+                }
+
+                if (i >= mNumThreads) {
+                    break;
+                }
+
+                function<void()> task{move(mTaskQueue.front())};
+                mTaskQueue.pop_front();
+
+                // Unlock the lock, so we can process the task without blocking other
+                // threads
+                lock.unlock();
+
+                task();
+
+                mNumTasksInSystem--;
+
+                {
+                    unique_lock<mutex> localLock{mSystemBusyMutex};
+
+                    if (mNumTasksInSystem == 0) {
+                        mSystemBusyCondition.notify_all();
+                    }
+                }
+            }
+        });
+    }
 }
 
-void ThreadPool::startThreads(size_t num) {
-	mNumThreads += num;
-	for (size_t i = mThreads.size(); i < mNumThreads; ++i) {
-		mThreads.emplace_back([this, i] {
-			while (true) {
-				unique_lock<mutex> lock{mTaskQueueMutex};
+void
+ThreadPool::shutdownThreads(size_t num) {
+    auto numToClose = min(num, mNumThreads);
 
-				// look for a work item
-				while (i < mNumThreads && mTaskQueue.empty()) {
-					// if there are none wait for notification
-					mWorkerCondition.wait(lock);
-				}
+    {
+        lock_guard<mutex> lock{mTaskQueueMutex};
+        mNumThreads -= numToClose;
+    }
 
-				if (i >= mNumThreads) {
-					break;
-				}
-
-				function<void()> task{move(mTaskQueue.front())};
-				mTaskQueue.pop_front();
-
-				// Unlock the lock, so we can process the task without blocking other threads
-				lock.unlock();
-
-				task();
-
-				mNumTasksInSystem--;
-
-				{
-					unique_lock<mutex> localLock{mSystemBusyMutex};
-
-					if (mNumTasksInSystem == 0) {
-						mSystemBusyCondition.notify_all();
-					}
-				}
-			}
-		});
-	}
+    // Wake up all the threads to have them quit
+    mWorkerCondition.notify_all();
+    for (auto i = 0u; i < numToClose; ++i) {
+        mThreads.back().join();
+        mThreads.pop_back();
+    }
 }
 
-void ThreadPool::shutdownThreads(size_t num) {
-	auto numToClose = min(num, mNumThreads);
+void
+ThreadPool::waitUntilFinished() {
+    unique_lock<mutex> lock{mSystemBusyMutex};
 
-	{
-		lock_guard<mutex> lock{mTaskQueueMutex};
-		mNumThreads -= numToClose;
-	}
+    if (mNumTasksInSystem == 0) {
+        return;
+    }
 
-	// Wake up all the threads to have them quit
-	mWorkerCondition.notify_all();
-	for (auto i = 0u; i < numToClose; ++i) {
-		mThreads.back().join();
-		mThreads.pop_back();
-	}
+    mSystemBusyCondition.wait(lock);
 }
 
-void ThreadPool::waitUntilFinished() {
-	unique_lock<mutex> lock{mSystemBusyMutex};
+void
+ThreadPool::waitUntilFinishedFor(const chrono::microseconds Duration) {
+    unique_lock<mutex> lock{mSystemBusyMutex};
 
-	if (mNumTasksInSystem == 0) {
-		return;
-	}
+    if (mNumTasksInSystem == 0) {
+        return;
+    }
 
-	mSystemBusyCondition.wait(lock);
+    mSystemBusyCondition.wait_for(lock, Duration);
 }
 
-void ThreadPool::waitUntilFinishedFor(const chrono::microseconds Duration) {
-	unique_lock<mutex> lock{mSystemBusyMutex};
+void
+ThreadPool::flushQueue() {
+    lock_guard<mutex> lock{mTaskQueueMutex};
 
-	if (mNumTasksInSystem == 0) {
-		return;
-	}
-
-	mSystemBusyCondition.wait_for(lock, Duration);
-}
-
-void ThreadPool::flushQueue() {
-	lock_guard<mutex> lock{mTaskQueueMutex};
-
-	mNumTasksInSystem -= mTaskQueue.size();
-	mTaskQueue.clear();
+    mNumTasksInSystem -= mTaskQueue.size();
+    mTaskQueue.clear();
 }
 
 NGP_NAMESPACE_END

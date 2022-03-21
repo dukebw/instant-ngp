@@ -16,24 +16,23 @@
 #pragma once
 
 #include <neural-graphics-primitives/common.h>
-#include <neural-graphics-primitives/triangle.cuh>
-
 #include <optix.h>
+
+#include <neural-graphics-primitives/triangle.cuh>
 
 NGP_NAMESPACE_BEGIN
 
 struct Raytrace {
-	struct Params
-	{
-		Eigen::Vector3f* ray_origins;
-		Eigen::Vector3f* ray_directions;
-		const Triangle* triangles;
-		OptixTraversableHandle handle;
-	};
+    struct Params {
+        Eigen::Vector3f* ray_origins;
+        Eigen::Vector3f* ray_directions;
+        const Triangle* triangles;
+        OptixTraversableHandle handle;
+    };
 
-	struct RayGenData {};
-	struct MissData {};
-	struct HitGroupData {};
+    struct RayGenData {};
+    struct MissData {};
+    struct HitGroupData {};
 };
 
 NGP_NAMESPACE_END
