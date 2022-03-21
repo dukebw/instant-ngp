@@ -1,6 +1,6 @@
 {
 	"parent": "base.json",
-	"encoding": {		
+	"encoding": {
 		"log2_hashmap_size": 21
 	}
 }
