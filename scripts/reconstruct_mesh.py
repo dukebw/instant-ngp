@@ -104,15 +104,15 @@ def mesh_from_saved(
     with open(camera_transforms, "r", encoding="utf-8") as filestream:
         camera_path = json.load(filestream)["path"]
 
-    visible_point_indices = []
+    visible_point_indices = set()
     for transform in camera_path:
         translation = transform["T"]
         _, vis_indices = point_cloud.hidden_point_removal(
             translation, spherical_projection_radius * translation[-1]
         )
-        visible_point_indices = visible_point_indices + vis_indices
+        visible_point_indices.update(vis_indices)
 
-    visible_points = point_cloud.select_by_index(visible_point_indices)
+    visible_points = point_cloud.select_by_index(list(visible_point_indices))
     o3d.visualization.draw_geometries([visible_points])
 
 
