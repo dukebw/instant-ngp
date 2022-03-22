@@ -68,6 +68,24 @@ def cli():
     help="""Path to load trained NeRF model from""",
 )
 @click.option(
+    "--psr-depth",
+    type=int,
+    default=9,
+    help="""Maximum depth of the tree that will be used for surface reconstruction""",
+)
+@click.option(
+    "--remove-outlier-num-points",
+    type=int,
+    default=None,
+    help="""Minimum number of points in sphere for radius outlier removal""",
+)
+@click.option(
+    "--remove-outlier-radius",
+    type=float,
+    default=None,
+    help="""Radius of sphere for radius outlier removal""",
+)
+@click.option(
     "--spherical-projection-radius",
     type=float,
     default=100.0,
@@ -80,13 +98,12 @@ def mesh_from_saved(
     density_threshold: float,
     marching_cubes_resolution: int,
     model_snapshot_path: str,
+    psr_depth: int,
+    remove_outlier_num_points: int,
+    remove_outlier_radius: float,
     spherical_projection_radius: float,
 ):
     """Mesh from a saved model"""
-    # TODO(brendan):
-    # 3. point cloud denoising (outlier removal)
-    # 4. PSR
-    # 5. marching cubes
     testbed = ngp.Testbed(ngp.TestbedMode.Nerf)
     testbed.load_snapshot(model_snapshot_path)
 
@@ -113,7 +130,25 @@ def mesh_from_saved(
         visible_point_indices.update(vis_indices)
 
     visible_points = point_cloud.select_by_index(list(visible_point_indices))
-    o3d.visualization.draw_geometries([visible_points])
+
+    if remove_outlier_num_points is not None:
+        inlier_points, inlier_indices = visible_points.remove_radius_outlier(
+            nb_points=remove_outlier_num_points, radius=remove_outlier_radius
+        )
+        inlier_points_vis = o3d.geometry.PointCloud(inlier_points)
+        outlier_points_vis = visible_points.select_by_index(inlier_indices, invert=True)
+        outlier_points_vis.paint_uniform_color([1.0, 0.0, 0.0])
+        inlier_points_vis.paint_uniform_color([0.8, 0.8, 0.8])
+
+        o3d.visualization.draw_geometries([inlier_points_vis, outlier_points_vis])
+
+    psr_mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+        inlier_points, depth=psr_depth, linear_fit=True
+    )
+    vertices_to_remove = densities < np.quantile(densities, 0.01)
+    psr_mesh.remove_vertices_by_mask(vertices_to_remove)
+
+    o3d.visualization.draw_geometries([psr_mesh])
 
 
 @cli.command()
